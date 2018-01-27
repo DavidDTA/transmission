@@ -289,6 +289,14 @@ MonoBehaviour:
   roadStraight: {fileID: 100000, guid: bdbd9d7226778fd4b8192cf3df5e028d, type: 3}
   roadIntersectionT: {fileID: 100000, guid: 8bcfdd1caed6d2a488dcdc220b13f8cb, type: 3}
   roadTurn: {fileID: 100000, guid: 4d8e62f5885b4c746ad9a100c401d90b, type: 3}
+  environmentTrees:
+  - {fileID: 100000, guid: 0001ef2c9558aba49a7eb3ef1ad3b64d, type: 3}
+  - {fileID: 100000, guid: 1f1d790200b479d44b71528a4d59cf95, type: 3}
+  - {fileID: 100000, guid: d7c673489ae779f4981703d07a67fa6d, type: 3}
+  - {fileID: 100000, guid: eb1cfc8303f4f584c8f43c4af9226acd, type: 3}
+  - {fileID: 100000, guid: a85384746d57ef7429c0b6665941555c, type: 3}
+  - {fileID: 100000, guid: 1c4a01c675c9bad4f866874a3de82730, type: 3}
+  - {fileID: 100000, guid: c9cfba535676c5746aea07a0f248194b, type: 3}
 --- !u!4 &1585898691
 Transform:
   m_ObjectHideFlags: 0
