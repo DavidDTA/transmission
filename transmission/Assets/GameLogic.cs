@@ -10,7 +10,7 @@ public class GameLogic : MonoBehaviour {
 	public GameObject mainCamera;
 
 	// speed/acceleration constants
-	private float speed = 0.03f;
+	private float speed = 0.8f;
 	private float deceleration = 0.988f;
 	private float acceleration = 1.01f;
 
@@ -35,6 +35,9 @@ public class GameLogic : MonoBehaviour {
 		targetRotation = mainCamera.transform.rotation;
 
 	}
+
+	private float angle = 0f;
+	private float rotateSpeed = 0.001f;
 	
 	// Update is called once per frame
 	void Update () {
@@ -46,29 +49,17 @@ public class GameLogic : MonoBehaviour {
 			turnDirection = Side.Left;
 		}
 
-		mainCamera.transform.Translate (Vector3.forward * speed);
-		float distanceFromTarget = Mathf.Abs(targetIntersection.transform.position.z - mainCamera.transform.position.z);
-		if (distanceFromTarget < 2.5 && !isTurning) {
-			speed *= deceleration;
-			if (!isTurning && distanceFromTarget < .60) {
-				if (turnDirection == Side.Left) {
-					targetRotation = mainCamera.transform.rotation * Quaternion.AngleAxis (90, Vector3.down);
-				} else if (turnDirection == Side.Right) {
-					targetRotation = mainCamera.transform.rotation * Quaternion.AngleAxis (-90, Vector3.down);
-				}
+		mainCamera.transform.position += new Vector3(
+			Camera.main.transform.forward.x,
+			0f,
+			Camera.main.transform.forward.z
+		) * speed * Time.deltaTime;
 
-				targetIntersection = instantiateRoad (Road.INTERSECTION_T, 0, 4, Direction.NORTH);
-				isTurning = true;
-			}
-		} 
-		if (Quaternion.Dot(mainCamera.transform.rotation, targetRotation) > .9f && distanceFromTarget > 2) {
-			if (speed < .03f) {
-				speed *= acceleration;
-			} else {
-				speed = .03f;
-			}
-		}
+		angle += rotateSpeed * Time.deltaTime;
 
+		var offset = new Vector3(Mathf.Sin(angle), 0, Mathf.Cos(angle) * 10);
+		Debug.Log (mainCamera.transform.position);
+		//mainCamera.transform.position = targetIntersection.transform.position + offset;
 		mainCamera.transform.rotation = Quaternion.Lerp (mainCamera.transform.rotation, targetRotation , 1.5f * Time.deltaTime);
 	}
 
