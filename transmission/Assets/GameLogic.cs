@@ -3,10 +3,15 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class GameLogic : MonoBehaviour {
-	
+	public GameObject roadStraight;
+	public GameObject roadIntersectionT;
+
 	// Use this for initialization
 	void Start () {
-		new Level ().start ();
+		roadStraight.transform.localScale = new Vector3 (1, 1, -1);
+		roadIntersectionT.transform.localScale = new Vector3 (1, 1, -1);
+		instantiateRoadStraight (0, 0, Direction.NORTH);
+		instantiateRoadIntersectionT (0, 1, Direction.NORTH);
 	}
 	
 	// Update is called once per frame
@@ -14,42 +19,19 @@ public class GameLogic : MonoBehaviour {
 		
 	}
 
-	void placeItems(Item[] items) {
+	void instantiateRoad(GameObject roadType, int x, int z, int rotation) {
+		Instantiate (roadType, new Vector3(2 * x, 0, 2 * z), Quaternion.Euler(new Vector3(0, rotation * 90, 0)));
+	}
+
+	void instantiateRoadStraight(int x, int z, Direction dir) {
+		instantiateRoad(roadStraight, x, z, (int) dir);
+	}
+
+	void instantiateRoadIntersectionT(int x, int z, Direction dir) {
+		instantiateRoad(roadIntersectionT, x, z, -((int) dir + 1));
 	}
 }
 
-class Level {
-	public static float ROAD_LENGTH = 1000f;
-	public static float ROAD_WIDTH = 10f;
-
-	public GameObject road = GameObject.CreatePrimitive(PrimitiveType.Quad);
-	public Item[] items = { new Item() };
-
-	public Level() {
-		road.transform.Rotate(new Vector3 (90, 0, 0));
-		road.transform.localScale = new Vector3 (ROAD_WIDTH, ROAD_LENGTH, 1);
-		road.transform.position = new Vector3 (0, 0, ROAD_LENGTH / 2);
-	}
-
-	public void start() {
-	}
-		
-	void clear() {
-		foreach (Item item in items) {
-			item.destroy ();
-		}
-	}
-}
-
-class Item {
-	public GameObject gameObject = new GameObject("item");
-	public Item() {
-		gameObject.AddComponent<Rigidbody>().useGravity = false;
-		gameObject.AddComponent<MeshFilter>().mesh = Resources.Load<Mesh>("");
-		gameObject.AddComponent<MeshRenderer>();
-	}
-
-	public void destroy() {
-		GameObject.Destroy(gameObject);
-	}
+enum Direction {
+	NORTH = 0, EAST = 1, SOUTH = 2, WEST = 3
 }
