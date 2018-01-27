@@ -7,6 +7,18 @@ public class GameLogic : MonoBehaviour {
 	public GameObject roadIntersectionT;
 	public GameObject roadTurn;
 	public GameObject[] environmentTrees;
+	public GameObject mainCamera;
+
+	// speed/acceleration constants
+	private float speed = 0.03f;
+	private float deceleration = 0.988f;
+	private float acceleration = 1.01f;
+
+	// Used for turning
+	private bool isTurning = false;
+	private GameObject targetIntersection;
+	private Quaternion targetRotation;
+	private Side? turnDirection = null;
 
 	// Use this for initialization
 	void Start () {
@@ -18,13 +30,48 @@ public class GameLogic : MonoBehaviour {
 		instantiateRoad (Road.BRANCH_LEFT, -1, 2, Direction.NORTH);
 		instantiateRoad (Road.TURN_RIGHT, -1, 3, Direction.NORTH);
 		instantiateRoad (Road.TURN_LEFT, 0, 3, Direction.EAST);
-		instantiateRoad (Road.INTERSECTION_T, 0, 4, Direction.NORTH);
+
+		targetIntersection = instantiateRoad (Road.INTERSECTION_T, 0, 4, Direction.NORTH);
+		targetRotation = mainCamera.transform.rotation;
+
 	}
 	
 	// Update is called once per frame
 	void Update () {
-		
+		// Listen for left and right turns.
+		if (Input.GetKeyDown (KeyCode.RightArrow)) {
+			turnDirection = Side.Right;
+		}
+		if (Input.GetKeyDown (KeyCode.LeftArrow)) {
+			turnDirection = Side.Left;
+		}
+
+		mainCamera.transform.Translate (Vector3.forward * speed);
+		float distanceFromTarget = Mathf.Abs(targetIntersection.transform.position.z - mainCamera.transform.position.z);
+		if (distanceFromTarget < 2.5 && !isTurning) {
+			speed *= deceleration;
+			if (!isTurning && distanceFromTarget < .60) {
+				if (turnDirection == Side.Left) {
+					targetRotation = mainCamera.transform.rotation * Quaternion.AngleAxis (90, Vector3.down);
+				} else if (turnDirection == Side.Right) {
+					targetRotation = mainCamera.transform.rotation * Quaternion.AngleAxis (-90, Vector3.down);
+				}
+
+				targetIntersection = instantiateRoad (Road.INTERSECTION_T, 0, 4, Direction.NORTH);
+				isTurning = true;
+			}
+		} 
+		if (Quaternion.Dot(mainCamera.transform.rotation, targetRotation) > .9f && distanceFromTarget > 2) {
+			if (speed < .03f) {
+				speed *= acceleration;
+			} else {
+				speed = .03f;
+			}
+		}
+
+		mainCamera.transform.rotation = Quaternion.Lerp (mainCamera.transform.rotation, targetRotation , 1.5f * Time.deltaTime);
 	}
+
 
 	private GameObject instantiateRoad(Road roadType, int x, int z, Direction heading) {
 		switch (roadType) {
