@@ -146,7 +146,7 @@ class Tree : EnvironmentObject {
 class Sign : EnvironmentObject {
 	public Color color;
 
-	public Sign(Position pos, Color color) {
+	public Sign(Color color) {
 		this.color = color;
 	}
 
