@@ -5,13 +5,19 @@ using UnityEngine;
 public class GameLogic : MonoBehaviour {
 	public GameObject roadStraight;
 	public GameObject roadIntersectionT;
+	public GameObject roadTurn;
 
 	// Use this for initialization
 	void Start () {
 		roadStraight.transform.localScale = new Vector3 (1, 1, -1);
 		roadIntersectionT.transform.localScale = new Vector3 (1, 1, -1);
-		//instantiateRoadStraight (0, 0, Direction.NORTH);
-		instantiateRoadIntersectionT (0, 0, Direction.NORTH);
+		instantiateRoadStraight (0, 0, Direction.NORTH);
+		instantiateRoadTurnLeft (0, 1, Direction.NORTH);
+		instantiateRoadTurnRight (-1, 1, Direction.WEST);
+		instantiateRoadStraight (-1, 2, Direction.NORTH);
+		instantiateRoadTurnRight (-1, 3, Direction.NORTH);
+		instantiateRoadTurnLeft (0, 3, Direction.EAST);
+		instantiateRoadIntersectionT (0, 4, Direction.NORTH);
 	}
 	
 	// Update is called once per frame
@@ -28,7 +34,15 @@ public class GameLogic : MonoBehaviour {
 	}
 
 	void instantiateRoadIntersectionT(int x, int z, Direction dir) {
-		instantiateRoad(roadIntersectionT, x, z, -((int) dir + 1));
+		instantiateRoad(roadIntersectionT, x, z, (int) dir - 1);
+	}
+
+	void instantiateRoadTurnLeft(int x, int z, Direction dir) {
+		instantiateRoad(roadTurn, x, z, (int) dir);
+	}
+
+	void instantiateRoadTurnRight(int x, int z, Direction dir) {
+		instantiateRoad(roadTurn, x, z, (int) dir - 1);
 	}
 }
 

@@ -288,6 +288,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   roadStraight: {fileID: 100000, guid: bdbd9d7226778fd4b8192cf3df5e028d, type: 3}
   roadIntersectionT: {fileID: 100000, guid: 8bcfdd1caed6d2a488dcdc220b13f8cb, type: 3}
+  roadTurn: {fileID: 100000, guid: 4d8e62f5885b4c746ad9a100c401d90b, type: 3}
 --- !u!4 &1585898691
 Transform:
   m_ObjectHideFlags: 0
