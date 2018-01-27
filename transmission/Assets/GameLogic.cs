@@ -99,10 +99,7 @@ public class GameLogic : MonoBehaviour {
 	}
 
 	private void instantiateEnvironmentObject(EnvironmentObject environmentObject, int x, int z, Road roadType, Direction heading, Side side) {
-		float xOff;
-		float zOff;
-		GameObject template = environmentTrees[(int) (Random.value * environmentTrees.Length) % environmentTrees.Length];
-		Instantiate (template, new Vector3(2 * x, 0, 2 * z) + environmentObjectOffset(roadType, heading, side), Quaternion.identity);
+		Instantiate (environmentObject.pickTemplate(this), new Vector3(2 * x, 0, 2 * z) + environmentObjectOffset(roadType, heading, side), Quaternion.identity);
 	}
 }
 
@@ -126,9 +123,11 @@ struct Position {
 	}
 }
 	
-class EnvironmentObject {
+abstract class EnvironmentObject {
 	public EnvironmentObject() {
 	}
+
+	public abstract GameObject pickTemplate (GameLogic gameLogic);
 }
 	
 class Tree : EnvironmentObject {
@@ -137,6 +136,11 @@ class Tree : EnvironmentObject {
 	public Tree(Color color) {
 		this.color = color;
 	}
+
+	public override GameObject pickTemplate(GameLogic gameLogic) {
+		GameObject[] treeArray = gameLogic.environmentTrees;
+		return treeArray[(int) (Random.value * treeArray.Length) % treeArray.Length];
+	}
 }
 	
 class Sign : EnvironmentObject {
@@ -144,6 +148,10 @@ class Sign : EnvironmentObject {
 
 	public Sign(Position pos, Color color) {
 		this.color = color;
+	}
+
+	public override GameObject pickTemplate(GameLogic gameLogic) {
+		return null;
 	}
 }
 
@@ -240,7 +248,7 @@ public class Levels {
 			new RoadSegment(Road.STRAIGHT, new KeyValuePair<Side, EnvironmentObject>[] {}),
 			new RoadSegment(Road.STRAIGHT, new KeyValuePair<Side, EnvironmentObject>[] {}),
 			new RoadSegment(Road.STRAIGHT, new KeyValuePair<Side, EnvironmentObject>[] {
-				new KeyValuePair<Side, EnvironmentObject>(Side.Right, new Tree(Color.blue)),
+				new KeyValuePair<Side, EnvironmentObject>(Side.Right, new Sign(Color.blue)),
 			}),
 		});
 
@@ -266,7 +274,7 @@ public class Levels {
 			new RoadSegment(Road.STRAIGHT, new KeyValuePair<Side, EnvironmentObject>[] {}),
 			new RoadSegment(Road.STRAIGHT, new KeyValuePair<Side, EnvironmentObject>[] {}),
 			new RoadSegment(Road.STRAIGHT, new KeyValuePair<Side, EnvironmentObject>[] {
-				new KeyValuePair<Side, EnvironmentObject>(Side.Left, new Tree(Color.red)),
+				new KeyValuePair<Side, EnvironmentObject>(Side.Left, new Sign(Color.red)),
 			}),
 		});
 
@@ -293,7 +301,7 @@ public class Levels {
 			new RoadSegment(Road.STRAIGHT, new KeyValuePair<Side, EnvironmentObject>[] {}),
 			new RoadSegment(Road.STRAIGHT, new KeyValuePair<Side, EnvironmentObject>[] {}),
 			new RoadSegment(Road.STRAIGHT, new KeyValuePair<Side, EnvironmentObject>[] {
-				new KeyValuePair<Side, EnvironmentObject>(Side.Left, new Tree(Color.red)),
+				new KeyValuePair<Side, EnvironmentObject>(Side.Left, new Sign(Color.red)),
 			}),
 		});
 
