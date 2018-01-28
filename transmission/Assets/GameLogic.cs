@@ -223,12 +223,12 @@ public class GameLogic : MonoBehaviour {
 					setTurn (Movement.TURN_LEFT);
 					new Road.TurnLeft().updatePositionAndHeading(ref targetX, ref targetZ, ref targetHeading);
 					levelManager.advance ();
-					levelManager.getCurrentLevel().instantiate(this, ref targetX, ref targetZ, ref targetHeading);
+					garbage.AddRange(levelManager.getCurrentLevel().instantiate(this, ref targetX, ref targetZ, ref targetHeading));
 				} else if (levelManager.getCurrentLevel ().correctTurn == Side.Right && turnDirection == Movement.TURN_RIGHT) {
 					setTurn (Movement.TURN_RIGHT);
 					new Road.TurnRight().updatePositionAndHeading(ref targetX, ref targetZ, ref targetHeading);
 					levelManager.advance ();
-					levelManager.getCurrentLevel().instantiate(this, ref targetX, ref targetZ, ref targetHeading);
+					garbage.AddRange(levelManager.getCurrentLevel().instantiate(this, ref targetX, ref targetZ, ref targetHeading));
 				} else {
 					gameOver ();
 				}
