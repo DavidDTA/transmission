@@ -610,7 +610,7 @@ class Levels {
 		});
 
 	public static Level level3 = new Level(
-		"If one side of the road has more yellow trees, turn to that side \n\n" +
+		"If one side of the road has more yellow trees, turn to that side <br>" +
 		"UNLESS there is a red tree. Red trees mean turn right always",
 		Side.Left,
 		new RoadSegment[] {
@@ -638,7 +638,7 @@ class Levels {
 		});
 
 	public static Level level4 = new Level(
-		"If one side of the road has more yellow trees, turn to that side \n\n" +
+		"If one side of the road has more yellow trees, turn to that side <br><br>" +
 		"UNLESS there is a red tree. Red trees mean turn right always",
 		Side.Right,
 		new RoadSegment[] {
@@ -672,9 +672,9 @@ class Levels {
 		});
 
 	public static Level level5 = new Level(
-		"If one side of the road has more yellow trees, turn to that side \n\n" +
-		"UNLESS there is a red tree. Red trees mean turn right always \n\n" +
-		"If you see a blue tree, switch yellow and green all other rules \n\n",
+		"If one side of the road has more yellow trees, turn to that side <br><br>" +
+		"UNLESS there is a red tree. Red trees mean turn right always <br><br>" +
+		"If you see a blue tree, switch yellow and green all other rules <br><br>",
 		Side.Left,
 		new RoadSegment[] {
 			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
@@ -705,9 +705,9 @@ class Levels {
 		});
 
 	public static Level level6 = new Level(
-		"If one side of the road has more yellow trees, turn to that side \n\n" +
-		"UNLESS there is a red tree. Red trees mean turn right always \n\n" +
-		"If you see a blue tree, switch yellow and green all other rules \n\n",
+		"If one side of the road has more yellow trees, turn to that side <br><br>" +
+		"UNLESS there is a red tree. Red trees mean turn right always <br><br>" +
+		"If you see a blue tree, switch yellow and green all other rules <br><br>",
 		Side.Right,
 		new RoadSegment[] {
 			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
@@ -736,9 +736,9 @@ class Levels {
 		});
 
 	public static Level level7 = new Level(
-		"If one side of the road has more yellow trees, turn to that side \n\n" +
-		"UNLESS there is a red tree. Red trees mean turn right always \n\n" +
-		"If you see a blue tree, switch yellow and green all other rules \n\n" +
+		"If one side of the road has more yellow trees, turn to that side <br><br>" +
+		"UNLESS there is a red tree. Red trees mean turn right always <br><br>" +
+		"If you see a blue tree, switch yellow and green all other rules <br><br>" +
 		"NEVER turn right twice in a row. If the other rules say to, turn left instead.",
 		Side.Left,
 		new RoadSegment[] {
@@ -770,9 +770,9 @@ class Levels {
 		});
 
 	public static Level level8 = new Level(
-		"If one side of the road has more yellow trees, turn to that side \n\n" +
-		"UNLESS there is a red tree. Red trees mean turn right always \n\n" +
-		"If you see a blue tree, switch yellow and green all other rules \n\n" +
+		"If one side of the road has more yellow trees, turn to that side <br>" +
+		"UNLESS there is a red tree. Red trees mean turn right always <br><br>" +
+		"If you see a blue tree, switch yellow and green all other rules <br><br>" +
 		"NEVER turn right twice in a row. If the other rules say to, turn left instead.",
 		Side.Right,
 		new RoadSegment[] {
