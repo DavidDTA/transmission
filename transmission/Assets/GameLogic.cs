@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class GameLogic : MonoBehaviour {
 	public const string SERVER_URL = "http://9e24ab9f.ngrok.io";
-	public const string BEGINNING_INSTRUCTIONS = "These are instructions.";
+	public const string BEGINNING_INSTRUCTIONS = "You're on the phone with your friend Tran. He's lost. In other worse, Tran's Missin'. Help him get home! Use these instructions to guide him home.";
 
 	public GameObject roadStraight;
 	public GameObject roadIntersectionT;
