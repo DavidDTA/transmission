@@ -9,7 +9,7 @@ public class GameLogic : MonoBehaviour {
 	public GameObject roadIntersectionT;
 	public GameObject roadTurn;
 	public GameObject[] environmentTrees;
-	public GameObject mainCamera;
+	public GameObject car;
 	public Color[] greens;
 	public Color[] yellows;
 	public Color[] reds;
@@ -23,7 +23,7 @@ public class GameLogic : MonoBehaviour {
 
 	// Used for turning
 	private Quaternion targetRotation;
-	private Side turnDirection = Side.Right;
+	private Movement turnDirection = Movement.STRAIGHT;
 	private Direction currentDirection;
 	private Vector3 targetPoint;
 	private Vector3 rotatePoint;
@@ -35,9 +35,6 @@ public class GameLogic : MonoBehaviour {
 	// Positioning
 	private Movement movementState = Movement.STRAIGHT;
 
-	int roadbuildingZ = 0;
-	int roadbuildingX = 0;
-
 	// Levels
 	Levels levelManager = new Levels();
 
@@ -47,7 +44,11 @@ public class GameLogic : MonoBehaviour {
 		roadIntersectionT.transform.localScale = new Vector3 (1, 1, -1);
 		targetPoint = levelManager.getNextLevel().instantiate (this, 0, 0, Direction.NORTH);
 
-		targetRotation = mainCamera.transform.rotation;
+		targetRotation = car.transform.rotation;
+
+		leftArrow = car.transform.Find("LeftArrow").gameObject;
+		rightArrow = car.transform.Find("RightArrow").gameObject;
+
 
 		currentDirection = Direction.NORTH;
 	}
@@ -58,13 +59,15 @@ public class GameLogic : MonoBehaviour {
 
 		// Listen for left and right turns.
 		if (Input.GetKeyDown (KeyCode.RightArrow)) {
-			turnDirection = Side.Right;
+			turnDirection = Movement.TURN_RIGHT;
+			SetBlink (Movement.TURN_RIGHT);
 		}
 		if (Input.GetKeyDown (KeyCode.LeftArrow)) {
-			turnDirection = Side.Left;
+			turnDirection = Movement.TURN_LEFT;
+			SetBlink (Movement.TURN_LEFT);
 		}
 			
-		mainCamera.transform.rotation = Quaternion.Lerp (mainCamera.transform.rotation, targetRotation , turnCameraSpeed * Time.deltaTime);
+		car.transform.rotation = Quaternion.Lerp (car.transform.rotation, targetRotation , turnCameraSpeed * Time.deltaTime);
 	}
 
 	Vector3 getRotatePointOffset() {
@@ -130,18 +133,27 @@ public class GameLogic : MonoBehaviour {
 		return (x%m + m)%m;
 	}
 
-	void setTurn(Side direction) {
+	void setTurn(Movement direction) {
+
 		switch (direction) {
-		case Side.Right:
-			targetRotation = mainCamera.transform.rotation * Quaternion.AngleAxis (90, Vector3.up);
+		case Movement.TURN_RIGHT:
+			targetRotation = car.transform.rotation * Quaternion.AngleAxis (90, Vector3.up);
 			movementState = Movement.TURN_RIGHT;
 			turnAngle = getCurrentAngle () + (Mathf.PI / 2f);
 			targetAngle = turnAngle - Mathf.PI / 2;
 			rotatePoint = targetPoint + getRotatePointOffset ();
 			currentDirection = (Direction)(mod ((int)currentDirection + 1, 4));
 			break;
-		case Side.Left: 
-			targetRotation = mainCamera.transform.rotation * Quaternion.AngleAxis (-90, Vector3.up);
+		case Movement.TURN_LEFT: 
+			targetRotation = car.transform.rotation * Quaternion.AngleAxis (-90, Vector3.up);
+			movementState = Movement.TURN_LEFT;
+			turnAngle = getCurrentAngle () - (Mathf.PI / 2f);
+			targetAngle = turnAngle + Mathf.PI / 2;
+			rotatePoint = targetPoint + getRotatePointOffset ();
+			currentDirection = (Direction)(mod((int)currentDirection - 1, 4));
+			break;
+		case Movement.STRAIGHT: 
+			targetRotation = car.transform.rotation * Quaternion.AngleAxis (-90, Vector3.up);
 			movementState = Movement.TURN_LEFT;
 			turnAngle = getCurrentAngle () - (Mathf.PI / 2f);
 			targetAngle = turnAngle + Mathf.PI / 2;
@@ -154,9 +166,9 @@ public class GameLogic : MonoBehaviour {
 
 	Vector3 getCarPos() {
 		return new Vector3 (
-			mainCamera.transform.position.x,
+			car.transform.position.x,
 			0f,
-			mainCamera.transform.position.z
+			car.transform.position.z
 		);
 	}
 
@@ -164,40 +176,68 @@ public class GameLogic : MonoBehaviour {
 		// Move car; either to continue straight or to turn.
 		switch (movementState) {
 		case Movement.STRAIGHT:
-			mainCamera.transform.position += new Vector3 (
-					mainCamera.transform.forward.x,
-					0f,
-					mainCamera.transform.forward.z
-				) * speed * Time.deltaTime;
-			if (Vector3.Distance(getCarPos(), targetPoint) < 1) {
-				setTurn(turnDirection);
+			car.transform.Translate(Vector3.forward * speed * Time.deltaTime);
+			if (Vector3.Distance (getCarPos (), targetPoint) < 1) {
+				setTurn (turnDirection);
 			}
 			break;
 		case Movement.TURN_LEFT:
 			turnAngle += rotateSpeed * Time.deltaTime;
 			var offset = new Vector3 (Mathf.Cos (turnAngle), 0, Mathf.Sin (turnAngle)) * 1f;
-			mainCamera.transform.position = rotatePoint + offset + new Vector3 (0, .2f, 0);
+			car.transform.position = rotatePoint + offset + new Vector3 (0, .2f, 0);
 			if (Mathf.Abs ((turnAngle % (2 * Mathf.PI)) - (targetAngle % (2 * Mathf.PI))) < 0.03f) {
 				offset = new Vector3 (Mathf.Cos (targetAngle), 0, Mathf.Sin (targetAngle)) * 1f;
-				mainCamera.transform.position = rotatePoint + offset + new Vector3 (0, .2f, 0);
+				car.transform.position = rotatePoint + offset + new Vector3 (0, .2f, 0);
 				movementState = Movement.STRAIGHT;
-				mainCamera.transform.rotation = targetRotation;
+				car.transform.rotation = targetRotation;
+				SetBlink (Movement.STRAIGHT);
 			}
 			break;
 		case Movement.TURN_RIGHT:
 			turnAngle -= rotateSpeed * Time.deltaTime;
 			offset = new Vector3 (Mathf.Cos (turnAngle), 0, Mathf.Sin (turnAngle)) * 1f;
-			mainCamera.transform.position = rotatePoint + offset + new Vector3 (0, .2f, 0);
+			car.transform.position = rotatePoint + offset + new Vector3 (0, .2f, 0);
 			if (Mathf.Abs ((turnAngle % (2 * Mathf.PI)) - (targetAngle % (2 * Mathf.PI))) < 0.03f) {
 				offset = new Vector3 (Mathf.Cos (targetAngle), 0, Mathf.Sin (targetAngle)) * 1f;
-				mainCamera.transform.position = rotatePoint + offset + new Vector3 (0, .2f, 0);
+				car.transform.position = rotatePoint + offset + new Vector3 (0, .2f, 0);
 				movementState = Movement.STRAIGHT;
-				mainCamera.transform.rotation = targetRotation;
+				car.transform.rotation = targetRotation;
+				SetBlink (Movement.STRAIGHT);
 			}
 			break;
 		}
 	}
 
+	GameObject leftArrow, rightArrow;
+
+
+
+	public void SetBlink(Movement direction) {
+		resetArrows ();
+
+		if (direction == Movement.TURN_RIGHT) {
+			StartCoroutine ("Blink", rightArrow);
+		} else if (direction == Movement.TURN_LEFT) {
+			StartCoroutine ("Blink", leftArrow);
+		}
+	}
+
+	void resetArrows() {
+		StopAllCoroutines ();
+				rightArrow.GetComponent<Renderer> ().material.color = Color.gray;
+				leftArrow.GetComponent<Renderer> ().material.color = Color.gray;
+	}
+
+	IEnumerator Blink(GameObject arrow) {
+		while (true) {
+			if (arrow.GetComponent<Renderer> ().material.color.Equals(Color.yellow)) {
+				arrow.GetComponent<Renderer> ().material.color = Color.gray;
+			} else {
+				arrow.GetComponent<Renderer> ().material.color = Color.yellow;
+			}
+			yield return new WaitForSeconds(0.5f);
+		}
+	}
 }
 
 public enum Direction {
@@ -209,6 +249,7 @@ public enum Movement {
 }
 
 public enum Side {Right, Left};
+
 
 public abstract class Road {
 	private void instantiate(GameObject template, int x, int z, int rotation) {
