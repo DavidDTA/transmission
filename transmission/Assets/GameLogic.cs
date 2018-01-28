@@ -685,11 +685,13 @@ class Levels {
 			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
 			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
 			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
-				new KeyValuePair<Side, EnvironmentObject>(Side.Right, new Tree(Color.green)),
 				new KeyValuePair<Side, EnvironmentObject>(Side.Left, new Tree(Color.blue)),
 			}),
 			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
 				new KeyValuePair<Side, EnvironmentObject>(Side.Right, new Tree(Color.yellow)),
+			}),
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
+				new KeyValuePair<Side, EnvironmentObject>(Side.Left, new Tree(Color.green)),
 			}),
 			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
 			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
