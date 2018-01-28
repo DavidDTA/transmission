@@ -8,6 +8,8 @@ public class GameLogic : MonoBehaviour {
 	public GameObject roadTurn;
 	public GameObject[] environmentTrees;
 	public GameObject mainCamera;
+	public Color[] greens;
+	public Color[] yellows;
 
 	// speed constants
 	private float speed = 1.8f;
