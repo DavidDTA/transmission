@@ -25,7 +25,9 @@ public class GameLogic : MonoBehaviour {
 	private Quaternion targetRotation;
 	private Movement turnDirection = Movement.STRAIGHT;
 	private Direction currentDirection;
-	private Vector3 targetPoint;
+	private int targetX = 0;
+	private int targetZ = 0;
+	private Direction targetHeading = Direction.NORTH;
 	private Vector3 rotatePoint;
 	private float turnAngle = 0f;
 	private float targetAngle = 0f;
@@ -42,7 +44,7 @@ public class GameLogic : MonoBehaviour {
 	void Start () {
 		roadStraight.transform.localScale = new Vector3 (1, 1, -1);
 		roadIntersectionT.transform.localScale = new Vector3 (1, 1, -1);
-		targetPoint = levelManager.getNextLevel().instantiate (this, 0, 0, Direction.NORTH);
+		levelManager.getNextLevel().instantiate (this, ref targetX, ref targetZ, ref targetHeading);
 
 		targetRotation = car.transform.rotation;
 
@@ -134,7 +136,7 @@ public class GameLogic : MonoBehaviour {
 	}
 
 	void setTurn(Movement direction) {
-
+		Vector3 targetPoint = new Vector3 (2 * targetX, 0, 2 * targetZ);
 		switch (direction) {
 		case Movement.TURN_RIGHT:
 			targetRotation = car.transform.rotation * Quaternion.AngleAxis (90, Vector3.up);
@@ -161,7 +163,6 @@ public class GameLogic : MonoBehaviour {
 			currentDirection = (Direction)(mod((int)currentDirection - 1, 4));
 			break;
 		}
-		targetPoint = levelManager.getNextLevel().instantiate(this, (int)(targetPoint.x/2), (int)(targetPoint.z/2), currentDirection);
 	}
 
 	Vector3 getCarPos() {
@@ -172,13 +173,38 @@ public class GameLogic : MonoBehaviour {
 		);
 	}
 
+	void gameOver () {
+		movementState = Movement.STOP;
+		StartCoroutine(restartAfterDelay());
+	}
+
+	IEnumerator restartAfterDelay() {
+		yield return new WaitForSeconds(1);
+		levelManager.restart();
+		targetX = 0;
+		targetZ = 0;
+		targetHeading = Direction.NORTH;
+		turnDirection = Movement.STRAIGHT;
+	}
+
 	void MoveCar() {
+		Vector3 targetPoint = new Vector3 (2 * targetX, 0, 2 * targetZ);
 		// Move car; either to continue straight or to turn.
 		switch (movementState) {
 		case Movement.STRAIGHT:
 			car.transform.Translate(Vector3.forward * speed * Time.deltaTime);
 			if (Vector3.Distance (getCarPos (), targetPoint) < 1) {
-				setTurn (turnDirection);
+				if (levelManager.getCurrentLevel ().correctTurn == Side.Left && turnDirection == Movement.TURN_LEFT) {
+					setTurn (Movement.TURN_LEFT);
+					new Road.TurnLeft ().updatePositionAndHeading (ref targetX, ref targetZ, ref targetHeading);
+					levelManager.getNextLevel().instantiate(this, ref targetX, ref targetZ, ref targetHeading);
+				} else if (levelManager.getCurrentLevel ().correctTurn == Side.Right && turnDirection == Movement.TURN_RIGHT) {
+					setTurn (Movement.TURN_RIGHT);
+					new Road.TurnRight ().updatePositionAndHeading (ref targetX, ref targetZ, ref targetHeading);
+					levelManager.getNextLevel().instantiate(this, ref targetX, ref targetZ, ref targetHeading);
+				} else {
+					gameOver ();
+				}
 			}
 			break;
 		case Movement.TURN_LEFT:
@@ -245,7 +271,7 @@ public enum Direction {
 }
 
 public enum Movement {
-	STRAIGHT, TURN_LEFT, TURN_RIGHT
+	STRAIGHT, TURN_LEFT, TURN_RIGHT, STOP
 }
 
 public enum Side {Right, Left};
@@ -453,7 +479,7 @@ public struct Level {
 		this.road = road;
 	}
 
-	public Vector3 instantiate(GameLogic gameLogic, int x, int z, Direction heading) {
+	public void instantiate(GameLogic gameLogic, ref int x, ref int z, ref Direction heading) {
 		byte[] data = System.Text.Encoding.UTF8.GetBytes (rules);
 		Dictionary<string, string> headers = new Dictionary<string, string> ();
 		headers.Add ("content-length", data.Length.ToString());
@@ -465,7 +491,6 @@ public struct Level {
 			}
 			segment.road.updatePositionAndHeading (ref x, ref z, ref heading);
 		}
-		return new Vector3 (x, 0, z) * 2;
 	}
 }
 	
@@ -479,10 +504,22 @@ class Levels {
 		return level;
 	}
 
+	public Level getCurrentLevel() {
+		return levels [levelIndex];
+	}
+
+	public void restart() {
+		levelIndex = 0;
+	}
+
 	public static Level level1 = new Level(
 		"If one side of the road has more yellow trees, turn to that side",
 		Side.Left,
 		new RoadSegment[] {
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
 			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
 				new KeyValuePair<Side, EnvironmentObject>(Side.Left, new Tree(Color.yellow)),
 			}),
