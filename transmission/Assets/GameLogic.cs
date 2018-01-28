@@ -33,14 +33,13 @@ public class GameLogic : MonoBehaviour {
 	int roadbuildingX = 0;
 
 	// Levels
-	Levels levelManager;
+	Levels levelManager = new Levels();
 
 	// Use this for initialization
 	void Start () {
 		roadStraight.transform.localScale = new Vector3 (1, 1, -1);
 		roadIntersectionT.transform.localScale = new Vector3 (1, 1, -1);
-		levelManager = new Levels ();
-		instantiateLevel (levelManager.getNextLevel());
+		targetPoint = levelManager.getNextLevel().instantiate (this, 0, 0, Direction.NORTH);
 
 		targetRotation = mainCamera.transform.rotation;
 
@@ -144,7 +143,7 @@ public class GameLogic : MonoBehaviour {
 			currentDirection = (Direction)(mod((int)currentDirection - 1, 4));
 			break;
 		}
-		instantiateLevel (levelManager.getNextLevel());
+		targetPoint = levelManager.getNextLevel().instantiate(this, 0, 0, Direction.NORTH);
 	}
 
 	Vector3 getCarPos() {
@@ -193,69 +192,6 @@ public class GameLogic : MonoBehaviour {
 		}
 	}
 
-	private GameObject instantiateRoad(Road roadType, int x, int z, Direction heading) {
-		switch (roadType) {
-		case Road.STRAIGHT:
-			return instantiateRoad (roadStraight, x, z, (int) heading);
-		case Road.TURN_LEFT:
-			return instantiateRoad (roadTurn, x, z, (int) heading - 1);
-		case Road.TURN_RIGHT:
-			return instantiateRoad (roadTurn, x, z, (int) heading - 2);
-		case Road.BRANCH_LEFT:
-			return instantiateRoad (roadIntersectionT, x, z, (int) heading);
-		case Road.BRANCH_RIGHT:
-			return instantiateRoad (roadIntersectionT, x, z, (int) heading - 2);
-		case Road.INTERSECTION_T:
-			return instantiateRoad (roadIntersectionT, x, z, (int) heading - 1);
-		default:
-			Debug.Log ("Unimplemented road instantiation");
-			return null;
-		}
-	}
-
-	private void instantiateLevel(Level level) {
-		foreach (RoadSegment segment in level.road) {
-			foreach (KeyValuePair<Side, EnvironmentObject> environmentObject in segment.environmentObjects) {
-				instantiateEnvironmentObject (environmentObject.Value, roadbuildingX, roadbuildingZ, segment.road, currentDirection, environmentObject.Key);
-			}
-			instantiateRoad (segment.road, roadbuildingX, roadbuildingZ, currentDirection);
-		}
-		targetPoint = new Vector3 (roadbuildingX * 2, 0, roadbuildingZ * 2);
-		instantiateRoad (Road.INTERSECTION_T, roadbuildingX, roadbuildingZ, currentDirection);
-	}
-
-
-	private GameObject instantiateRoad(GameObject roadType, int x, int z, int rotation) {
-		switch ((Direction) rotation){ 
-		case Direction.NORTH:
-			roadbuildingZ += 1;
-			break;
-		case Direction.EAST:
-			roadbuildingX += 1;
-			break;
-		case Direction.SOUTH:
-			roadbuildingZ -= 1;
-			break;
-		case Direction.WEST:
-			roadbuildingX -= 1;
-			break;
-		}
-		return Instantiate (roadType, new Vector3(2 * x, 0, 2 * z), Quaternion.Euler(new Vector3(0, rotation * 90, 0)));
-	}
-
-	private Vector3 environmentObjectOffset(Road roadType, Direction heading, Side side) {
-		switch (roadType) {
-		case Road.STRAIGHT:
-			return new Vector3 (side == Side.Left ? -.875f : .875f, 0, Random.value * 2 - 1);
-		default:
-			Debug.Log ("Unimplemented environment offset");
-			return Vector3.zero;
-		}
-	}
-
-	private void instantiateEnvironmentObject(EnvironmentObject environmentObject, int x, int z, Road roadType, Direction heading, Side side) {
-		Instantiate (environmentObject.pickTemplate(this), new Vector3(2 * x, 0, 2 * z) + environmentObjectOffset(roadType, heading, side), Quaternion.identity);
-	}
 }
 
 public enum Direction {
@@ -268,17 +204,124 @@ public enum Movement {
 
 public enum Side {Right, Left};
 
-public enum Road {
-	STRAIGHT, TURN_LEFT, TURN_RIGHT, INTERSECTION_T, BRANCH_LEFT, BRANCH_RIGHT
-}
-	
-public struct Position {
-	public int roadSection;
-	public Side side;
-
-	public Position (int roadSection, Side side) {
-		this.roadSection = roadSection;
-		this.side = side;
+public abstract class Road {
+	private void instantiate(GameObject template, int x, int z, int rotation) {
+		GameLogic.Instantiate (template, new Vector3(2 * x, 0, 2 * z), Quaternion.Euler(new Vector3(0, rotation * 90, 0)));
+	}
+	public abstract void instantiate (GameLogic gameLogic, int x, int z, Direction heading);
+	public abstract Vector3 environmentObjectOffset (Direction heading, Side side);
+	public abstract void updatePositionAndHeading (ref int x, ref int z, ref Direction heading);
+	private static Vector3 shiftFrame(Vector3 unit) {
+		return unit - new Vector3 (1, 0, 1);
+	}
+	private static void moveTowardHeading(ref int x, ref int z, Direction heading) {
+		switch (heading) {
+		case Direction.NORTH:
+			z++;
+			break;
+		case Direction.EAST:
+			x++;
+			break;
+		case Direction.SOUTH:
+			z--;
+			break;
+		case Direction.WEST:
+			x--;
+			break;
+		}
+	}
+	public class Straight : Road {
+		public override void instantiate (GameLogic gameLogic, int x, int z, Direction heading) {
+			instantiate (gameLogic.roadStraight, x, z, (int) heading);
+		}
+		public override Vector3 environmentObjectOffset(Direction heading, Side side) {
+			return shiftFrame(new Vector3 (side == Side.Left ? .125f : 1.875f, 0, Random.value * 2));
+		}
+		public override void updatePositionAndHeading (ref int x, ref int z, ref Direction heading) {
+			moveTowardHeading (ref x, ref z, heading);
+		}
+	}
+	public class TurnLeft : Road {
+		public override void instantiate (GameLogic gameLogic, int x, int z, Direction heading) {
+			instantiate (gameLogic.roadTurn, x, z, (int) heading - 1);
+		}
+		public override Vector3 environmentObjectOffset(Direction heading, Side side) {
+			float r = side == Side.Left ? .125f : 1.875f;
+			float along = Random.value * Mathf.PI / 2;
+			return shiftFrame(new Vector3 (Mathf.Cos(along), 0, Mathf.Sin(along)) * r);
+		}
+		public override void updatePositionAndHeading (ref int x, ref int z, ref Direction heading) {
+			heading = (Direction) (((int) heading - 1) % 4);
+			moveTowardHeading (ref x, ref z, heading);
+		}
+	}
+	public class TurnRight : Road {
+		public override void instantiate (GameLogic gameLogic, int x, int z, Direction heading) {
+			instantiate (gameLogic.roadTurn, x, z, (int) heading - 2);
+		}
+		public override Vector3 environmentObjectOffset(Direction heading, Side side) {
+			float r = side == Side.Right ? .125f : 1.875f;
+			float along = Random.value * Mathf.PI / 2;
+			return shiftFrame(new Vector3 (1 - Mathf.Cos(along), 0, Mathf.Sin(along)) * r);
+		}
+		public override void updatePositionAndHeading (ref int x, ref int z, ref Direction heading) {
+			heading = (Direction) (((int) heading + 1) % 4);
+			moveTowardHeading (ref x, ref z, heading);
+		}
+	}
+	public class IntersectionT : Road {
+		public override void instantiate (GameLogic gameLogic, int x, int z, Direction heading) {
+			instantiate (gameLogic.roadIntersectionT, x, z, (int) heading - 1);
+		}
+		public override Vector3 environmentObjectOffset(Direction heading, Side side) {
+			float r = .125f;
+			float along = Random.value * Mathf.PI / 2;
+			if (side == Side.Left) {
+				return shiftFrame (new Vector3 (Mathf.Cos (along) * r, 0, Mathf.Sin (along) * r));
+			}
+			return shiftFrame (new Vector3 (2 - Mathf.Cos (along) * r, 0, Mathf.Sin (along) * r));
+		}
+		public override void updatePositionAndHeading (ref int x, ref int z, ref Direction heading) {
+			// Can not move from here
+		}
+	}
+	public class BranchLeft : Road {
+		public override void instantiate (GameLogic gameLogic, int x, int z, Direction heading) {
+			instantiate (gameLogic.roadIntersectionT, x, z, (int) heading - 2);
+		}
+		public override Vector3 environmentObjectOffset(Direction heading, Side side) {
+			if (side == Side.Right) {
+				return shiftFrame(new Vector3 (1.875f, 0, Random.value * 2));
+			}
+			float r = .125f;
+			float along = Random.value * Mathf.PI / 2;
+			if (Random.value > 0.5) {
+				return shiftFrame(new Vector3 (Mathf.Cos(along) * r, 0, Mathf.Sin(along) * r));
+			}
+			return shiftFrame(new Vector3 (Mathf.Cos(along) * r, 0, 2 - Mathf.Sin(along) * r));
+		}
+		public override void updatePositionAndHeading (ref int x, ref int z, ref Direction heading) {
+			moveTowardHeading (ref x, ref z, heading);
+		}
+	}
+	public class BranchRight : Road {
+		public override void instantiate (GameLogic gameLogic, int x, int z, Direction heading) {
+			instantiate (gameLogic.roadIntersectionT, x, z, (int) heading - 1);
+		}
+		public override Vector3 environmentObjectOffset(Direction heading, Side side) {
+			if (side == Side.Left) {
+				return shiftFrame(new Vector3 (.125f, 0, Random.value * 2));
+			}
+			float r = .125f;
+			float along = Random.value * Mathf.PI / 2;
+			if (Random.value > 0.5) {
+				return shiftFrame(new Vector3 (2 - Mathf.Cos(along) * r, 0, Mathf.Sin(along) * r));
+			}
+			return shiftFrame(new Vector3 (2 - Mathf.Cos(along) * r, 0, 2 - Mathf.Sin(along) * r));
+		}
+		public override void updatePositionAndHeading (ref int x, ref int z, ref Direction heading) {
+			moveTowardHeading (ref x, ref z, heading);
+		}
 	}
 }
 	
@@ -335,219 +378,230 @@ public struct Level {
 		this.correctTurn = correctTurn;
 		this.road = road;
 	}
-}
 
-public class Levels {
-
-	int levelIndex = 0;
-	Level[] levels; 
-
-
-	public Levels() {
-		levels = new Level[] { level1, level2, level3 }; 
+	public Vector3 instantiate(GameLogic gameLogic, int x, int z, Direction heading) {
+		foreach (RoadSegment segment in road) {
+			segment.road.instantiate (gameLogic, x, z, heading);
+			foreach (KeyValuePair<Side, EnvironmentObject> environmentObject in segment.environmentObjects) {
+				GameLogic.Instantiate (environmentObject.Value.pickTemplate(gameLogic), new Vector3(2 * x, 0, 2 * z) + segment.road.environmentObjectOffset(heading, environmentObject.Key), Quaternion.identity);
+			}
+			segment.road.updatePositionAndHeading (ref x, ref z, ref heading);
+		}
+		return new Vector3 (x, 0, z) * 2;
 	}
+}
+	
+class Levels {
+	int levelIndex = 0;
+	Level[] levels = new Level[] { level1, level2, level3, level4, level5, level6, level7, level8 }; 
 
 	public Level getNextLevel() {
 		return levels[levelIndex];
 		levelIndex = (levelIndex + 1) % levels.Length;
 	}
 
-
-
-	public Level level1 = new Level(
+	public static Level level1 = new Level(
 		"If one side of the road has more yellow trees, turn to that side",
 		Side.Left,
 		new RoadSegment[] {
-			new RoadSegment(Road.STRAIGHT, new KeyValuePair<Side, EnvironmentObject>[] {
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
 				new KeyValuePair<Side, EnvironmentObject>(Side.Left, new Tree(Color.yellow)),
 			}),
-			new RoadSegment(Road.STRAIGHT, new KeyValuePair<Side, EnvironmentObject>[] {
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
 				new KeyValuePair<Side, EnvironmentObject>(Side.Right, new Tree(Color.green)),
 			}),
-			new RoadSegment(Road.STRAIGHT, new KeyValuePair<Side, EnvironmentObject>[] {}),
-			new RoadSegment(Road.STRAIGHT, new KeyValuePair<Side, EnvironmentObject>[] {
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
 				new KeyValuePair<Side, EnvironmentObject>(Side.Left, new Tree(Color.yellow)),
 			}),
-			new RoadSegment(Road.STRAIGHT, new KeyValuePair<Side, EnvironmentObject>[] {}),
-			new RoadSegment(Road.STRAIGHT, new KeyValuePair<Side, EnvironmentObject>[] {}),
-			new RoadSegment(Road.STRAIGHT, new KeyValuePair<Side, EnvironmentObject>[] {
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
 				new KeyValuePair<Side, EnvironmentObject>(Side.Left, new Tree(Color.green)),
 			}),
-			new RoadSegment(Road.STRAIGHT, new KeyValuePair<Side, EnvironmentObject>[] {}),
-			new RoadSegment(Road.STRAIGHT, new KeyValuePair<Side, EnvironmentObject>[] {}),
-			new RoadSegment(Road.STRAIGHT, new KeyValuePair<Side, EnvironmentObject>[] {
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
 				new KeyValuePair<Side, EnvironmentObject>(Side.Right, new Tree(Color.yellow)),
 			}),
+			new RoadSegment(new Road.IntersectionT(), new KeyValuePair<Side, EnvironmentObject>[] {}),
 		});
 
-	private Level level2 = new Level(
+	public static Level level2 = new Level(
 		"If one side of the road has more yellow trees, turn to that side",
 		Side.Right,
 		new RoadSegment[] {
-			new RoadSegment(Road.STRAIGHT, new KeyValuePair<Side, EnvironmentObject>[] {
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
 				new KeyValuePair<Side, EnvironmentObject>(Side.Right, new Tree(Color.yellow)),
 			}),
-			new RoadSegment(Road.STRAIGHT, new KeyValuePair<Side, EnvironmentObject>[] {
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
 				new KeyValuePair<Side, EnvironmentObject>(Side.Right, new Tree(Color.green)),
 			}),
-			new RoadSegment(Road.STRAIGHT, new KeyValuePair<Side, EnvironmentObject>[] {}),
-			new RoadSegment(Road.STRAIGHT, new KeyValuePair<Side, EnvironmentObject>[] {
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
 				new KeyValuePair<Side, EnvironmentObject>(Side.Left, new Tree(Color.yellow)),
 			}),
-			new RoadSegment(Road.STRAIGHT, new KeyValuePair<Side, EnvironmentObject>[] {
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
 				new KeyValuePair<Side, EnvironmentObject>(Side.Left, new Tree(Color.green)),
 				new KeyValuePair<Side, EnvironmentObject>(Side.Right, new Tree(Color.yellow)),
 			}),
+			new RoadSegment(new Road.IntersectionT(), new KeyValuePair<Side, EnvironmentObject>[] {}),
 		});
 
-	private Level level3 = new Level(
+	public static Level level3 = new Level(
 		"If one side of the road has more yellow trees, turn to that side." +
 		"UNLESS there is a red stop sign at the intersection, in which case you always turn right",
 		Side.Left,
 		new RoadSegment[] {
-			new RoadSegment(Road.STRAIGHT, new KeyValuePair<Side, EnvironmentObject>[] {}),
-			new RoadSegment(Road.STRAIGHT, new KeyValuePair<Side, EnvironmentObject>[] {
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
 				new KeyValuePair<Side, EnvironmentObject>(Side.Right, new Tree(Color.yellow)),
 				new KeyValuePair<Side, EnvironmentObject>(Side.Left, new Tree(Color.yellow)),
 				new KeyValuePair<Side, EnvironmentObject>(Side.Right, new Tree(Color.green)),
 			}),
-			new RoadSegment(Road.STRAIGHT, new KeyValuePair<Side, EnvironmentObject>[] {}),
-			new RoadSegment(Road.STRAIGHT, new KeyValuePair<Side, EnvironmentObject>[] {
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
 				new KeyValuePair<Side, EnvironmentObject>(Side.Left, new Tree(Color.yellow)),
 			}),
-			new RoadSegment(Road.STRAIGHT, new KeyValuePair<Side, EnvironmentObject>[] {
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
 				new KeyValuePair<Side, EnvironmentObject>(Side.Left, new Tree(Color.green)),
 				new KeyValuePair<Side, EnvironmentObject>(Side.Left, new Tree(Color.yellow)),
 			}),
-			new RoadSegment(Road.STRAIGHT, new KeyValuePair<Side, EnvironmentObject>[] {}),
-			new RoadSegment(Road.STRAIGHT, new KeyValuePair<Side, EnvironmentObject>[] {}),
-			new RoadSegment(Road.STRAIGHT, new KeyValuePair<Side, EnvironmentObject>[] {
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
 				new KeyValuePair<Side, EnvironmentObject>(Side.Right, new Sign(Color.blue)),
 			}),
+			new RoadSegment(new Road.IntersectionT(), new KeyValuePair<Side, EnvironmentObject>[] {}),
 		});
 
-	private Level level4 = new Level(
+	public static Level level4 = new Level(
 		"If one side of the road has more yellow trees, turn to that side." +
 		"UNLESS there is a red stop sign at the intersection, in which case you always turn right",
 		Side.Right,
 		new RoadSegment[] {
-			new RoadSegment(Road.STRAIGHT, new KeyValuePair<Side, EnvironmentObject>[] {}),
-			new RoadSegment(Road.STRAIGHT, new KeyValuePair<Side, EnvironmentObject>[] {
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
 				new KeyValuePair<Side, EnvironmentObject>(Side.Right, new Tree(Color.yellow)),
 				new KeyValuePair<Side, EnvironmentObject>(Side.Left, new Tree(Color.yellow)),
 				new KeyValuePair<Side, EnvironmentObject>(Side.Right, new Tree(Color.yellow)),
 			}),
-			new RoadSegment(Road.STRAIGHT, new KeyValuePair<Side, EnvironmentObject>[] {}),
-			new RoadSegment(Road.STRAIGHT, new KeyValuePair<Side, EnvironmentObject>[] {
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
 				new KeyValuePair<Side, EnvironmentObject>(Side.Left, new Tree(Color.green)),
 			}),
-			new RoadSegment(Road.STRAIGHT, new KeyValuePair<Side, EnvironmentObject>[] {
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
 				new KeyValuePair<Side, EnvironmentObject>(Side.Left, new Tree(Color.yellow)),
 				new KeyValuePair<Side, EnvironmentObject>(Side.Right, new Tree(Color.green)),
 			}),
-			new RoadSegment(Road.STRAIGHT, new KeyValuePair<Side, EnvironmentObject>[] {}),
-			new RoadSegment(Road.STRAIGHT, new KeyValuePair<Side, EnvironmentObject>[] {}),
-			new RoadSegment(Road.STRAIGHT, new KeyValuePair<Side, EnvironmentObject>[] {
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
 				new KeyValuePair<Side, EnvironmentObject>(Side.Left, new Sign(Color.red)),
 			}),
+			new RoadSegment(new Road.IntersectionT(), new KeyValuePair<Side, EnvironmentObject>[] {}),
 		});
 
-	private Level level5 = new Level(
+	public static Level level5 = new Level(
 		"If one side of the road has more yellow trees, turn to that side." +
 		"UNLESS there is a red stop sign at the intersection, in which case you always turn right\n" +
 		"If you see a black tree, switch yellow and green all other rules",
 		Side.Right,
 		new RoadSegment[] {
-			new RoadSegment(Road.STRAIGHT, new KeyValuePair<Side, EnvironmentObject>[] {}),
-			new RoadSegment(Road.STRAIGHT, new KeyValuePair<Side, EnvironmentObject>[] {
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
 				new KeyValuePair<Side, EnvironmentObject>(Side.Right, new Tree(Color.green)),
 				new KeyValuePair<Side, EnvironmentObject>(Side.Left, new Tree(Color.yellow)),
 				new KeyValuePair<Side, EnvironmentObject>(Side.Right, new Tree(Color.yellow)),
 			}),
-			new RoadSegment(Road.STRAIGHT, new KeyValuePair<Side, EnvironmentObject>[] {}),
-			new RoadSegment(Road.STRAIGHT, new KeyValuePair<Side, EnvironmentObject>[] {
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
 				new KeyValuePair<Side, EnvironmentObject>(Side.Left, new Tree(Color.green)),
 			}),
-			new RoadSegment(Road.STRAIGHT, new KeyValuePair<Side, EnvironmentObject>[] {
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
 				new KeyValuePair<Side, EnvironmentObject>(Side.Left, new Tree(Color.green)),
 				new KeyValuePair<Side, EnvironmentObject>(Side.Right, new Tree(Color.yellow)),
 			}),
-			new RoadSegment(Road.STRAIGHT, new KeyValuePair<Side, EnvironmentObject>[] {}),
-			new RoadSegment(Road.STRAIGHT, new KeyValuePair<Side, EnvironmentObject>[] {}),
-			new RoadSegment(Road.STRAIGHT, new KeyValuePair<Side, EnvironmentObject>[] {
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
 				new KeyValuePair<Side, EnvironmentObject>(Side.Left, new Sign(Color.red)),
 			}),
+			new RoadSegment(new Road.IntersectionT(), new KeyValuePair<Side, EnvironmentObject>[] {}),
 		});
 
-	private Level level6 = new Level(
+	public static Level level6 = new Level(
 		"If one side of the road has more yellow trees, turn to that side." +
 		"UNLESS there is a red stop sign at the intersection, in which case you always turn right\n" +
 		"If you see a black tree, switch yellow and green for all other rules",
 		Side.Right,
 		new RoadSegment[] {
-			new RoadSegment(Road.STRAIGHT, new KeyValuePair<Side, EnvironmentObject>[] {}),
-			new RoadSegment(Road.STRAIGHT, new KeyValuePair<Side, EnvironmentObject>[] {
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
 				new KeyValuePair<Side, EnvironmentObject>(Side.Right, new Tree(Color.yellow)),
 			}),
-			new RoadSegment(Road.STRAIGHT, new KeyValuePair<Side, EnvironmentObject>[] {
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
 				new KeyValuePair<Side, EnvironmentObject>(Side.Left, new Tree(Color.yellow)),
 			}),
-			new RoadSegment(Road.STRAIGHT, new KeyValuePair<Side, EnvironmentObject>[] {}),
-			new RoadSegment(Road.STRAIGHT, new KeyValuePair<Side, EnvironmentObject>[] {
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
 				new KeyValuePair<Side, EnvironmentObject>(Side.Right, new Tree(Color.green)),
 				new KeyValuePair<Side, EnvironmentObject>(Side.Left, new Tree(Color.black)),
 			}),
-			new RoadSegment(Road.STRAIGHT, new KeyValuePair<Side, EnvironmentObject>[] {
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
 				new KeyValuePair<Side, EnvironmentObject>(Side.Right, new Tree(Color.yellow)),
 			}),
+			new RoadSegment(new Road.IntersectionT(), new KeyValuePair<Side, EnvironmentObject>[] {}),
 		});
 
-	private Level level7 = new Level(
+	public static Level level7 = new Level(
 		"If one side of the road has more yellow trees, turn to that side." +
 		"UNLESS there is a red stop sign at the intersection, in which case you always turn right\n" +
 		"If you see a black tree, switch yellow and green for all other rules\n" +
 		"NEVER turn right twice in a row. If the other rules say to, turn left instead.",
 		Side.Left,
 		new RoadSegment[] {
-			new RoadSegment(Road.STRAIGHT, new KeyValuePair<Side, EnvironmentObject>[] {}),
-			new RoadSegment(Road.STRAIGHT, new KeyValuePair<Side, EnvironmentObject>[] {
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
 				new KeyValuePair<Side, EnvironmentObject>(Side.Left, new Tree(Color.yellow)),
 			}),
-			new RoadSegment(Road.STRAIGHT, new KeyValuePair<Side, EnvironmentObject>[] {
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
 				new KeyValuePair<Side, EnvironmentObject>(Side.Left, new Tree(Color.green)),
 			}),
-			new RoadSegment(Road.STRAIGHT, new KeyValuePair<Side, EnvironmentObject>[] {}),
-			new RoadSegment(Road.STRAIGHT, new KeyValuePair<Side, EnvironmentObject>[] {
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
 				new KeyValuePair<Side, EnvironmentObject>(Side.Left, new Tree(Color.green)),
 				new KeyValuePair<Side, EnvironmentObject>(Side.Right, new Tree(Color.yellow)),
 				new KeyValuePair<Side, EnvironmentObject>(Side.Right, new Tree(Color.yellow)),
 			}),
-			new RoadSegment(Road.STRAIGHT, new KeyValuePair<Side, EnvironmentObject>[] {
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
 				new KeyValuePair<Side, EnvironmentObject>(Side.Right, new Tree(Color.yellow)),
 			}),
+			new RoadSegment(new Road.IntersectionT(), new KeyValuePair<Side, EnvironmentObject>[] {}),
 		});
 
-	private Level level8 = new Level(
+	public static Level level8 = new Level(
 		"If one side of the road has more yellow trees, turn to that side." +
 		"UNLESS there is a red stop sign at the intersection, in which case you always turn right\n" +
 		"If you see a black tree, switch yellow and green for all other rules\n" +
 		"NEVER turn right twice in a row. If the other rules say to, turn left instead.",
 		Side.Right,
 		new RoadSegment[] {
-			new RoadSegment(Road.STRAIGHT, new KeyValuePair<Side, EnvironmentObject>[] {}),
-			new RoadSegment(Road.STRAIGHT, new KeyValuePair<Side, EnvironmentObject>[] {
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
 				new KeyValuePair<Side, EnvironmentObject>(Side.Right, new Tree(Color.yellow)),
 			}),
-			new RoadSegment(Road.STRAIGHT, new KeyValuePair<Side, EnvironmentObject>[] {
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
 				new KeyValuePair<Side, EnvironmentObject>(Side.Left, new Tree(Color.yellow)),
 			}),
-			new RoadSegment(Road.STRAIGHT, new KeyValuePair<Side, EnvironmentObject>[] {}),
-			new RoadSegment(Road.STRAIGHT, new KeyValuePair<Side, EnvironmentObject>[] {
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
 				new KeyValuePair<Side, EnvironmentObject>(Side.Right, new Tree(Color.green)),
 				new KeyValuePair<Side, EnvironmentObject>(Side.Left, new Tree(Color.green)),
 			}),
-			new RoadSegment(Road.STRAIGHT, new KeyValuePair<Side, EnvironmentObject>[] {
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
 				new KeyValuePair<Side, EnvironmentObject>(Side.Right, new Tree(Color.yellow)),
 			}),
+			new RoadSegment(new Road.IntersectionT(), new KeyValuePair<Side, EnvironmentObject>[] {}),
 		});
 }
