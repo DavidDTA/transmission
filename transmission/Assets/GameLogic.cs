@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class GameLogic : MonoBehaviour {
 	public const string SERVER_URL = "http://9e24ab9f.ngrok.io";
+	public const string BEGINNING_INSTRUCTIONS = "These are instructions.";
 
 	public GameObject roadStraight;
 	public GameObject roadIntersectionT;
@@ -56,6 +57,8 @@ public class GameLogic : MonoBehaviour {
 
 		leftArrow = car.transform.Find ("LeftArrow").gameObject;
 		rightArrow = car.transform.Find ("RightArrow").gameObject;
+
+		sendInstructions (BEGINNING_INSTRUCTIONS);
 	}
 	void start() {
 		car.transform.position = carInitalPosition;
@@ -205,6 +208,7 @@ public class GameLogic : MonoBehaviour {
 	}
 
 	void gameOver () {
+		sendInstructions (BEGINNING_INSTRUCTIONS);
 		movementState = Movement.STOP;
 	}
 
@@ -286,6 +290,16 @@ public class GameLogic : MonoBehaviour {
 			}
 			yield return new WaitForSeconds(0.5f);
 		}
+	}
+	public void sendInstructions(string rules) {
+		byte[] data = System.Text.Encoding.UTF8.GetBytes (rules);
+		byte[] array = new byte[1000];
+		for (int i = 0; i < data.Length; i++) {
+			array [i] = data [i];
+		}
+		Dictionary<string, string> headers = new Dictionary<string, string> ();
+		headers.Add ("content-length", data.Length.ToString());
+		new WWW (GameLogic.SERVER_URL, array, headers);
 	}
 }
 
@@ -506,14 +520,7 @@ public struct Level {
 
 	public List<GameObject> instantiate(GameLogic gameLogic, ref int x, ref int z, ref Direction heading) {
 		List<GameObject> garbage = new List<GameObject> ();
-		byte[] data = System.Text.Encoding.UTF8.GetBytes (rules);
-		byte[] array = new byte[1000];
-		for (int i = 0; i < data.Length; i++) {
-			array [i] = data [i];
-		}
-		Dictionary<string, string> headers = new Dictionary<string, string> ();
-		headers.Add ("content-length", data.Length.ToString());
-		new WWW (GameLogic.SERVER_URL, array, headers);
+		gameLogic.sendInstructions (rules);
 		foreach (RoadSegment segment in road) {
 			garbage.Add(segment.road.instantiate (gameLogic, x, z, heading));
 			foreach (KeyValuePair<Side, EnvironmentObject> environmentObject in segment.environmentObjects) {
