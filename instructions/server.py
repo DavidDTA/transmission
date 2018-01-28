@@ -50,8 +50,10 @@ setInterval(function() {location = location;}, 1000);
 
     def do_POST(self):
         content_len = int(self.headers.getheader('content-length', 0))
-        INSTRUCTIONS.value = self.rfile.readline()
+        print content_len
+        print self.rfile.readline()
         INSTRUCTIONS.value = self.rfile.read(content_len)
+        print INSTRUCTIONS.value
         self.send_response(200)
         self.end_headers()
         self.wfile.write('')
