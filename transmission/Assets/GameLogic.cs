@@ -9,21 +9,26 @@ public class GameLogic : MonoBehaviour {
 	public GameObject[] environmentTrees;
 	public GameObject mainCamera;
 
-	// speed/acceleration constants
+	// speed constants
 	private float speed = 1.8f;
-	private float deceleration = 0.988f;
-	private float acceleration = 1.01f;
+	private float turnCameraSpeed = 2.3f; 
+	private float rotateSpeed = 1f;
+
 
 	// Used for turning
 	private Quaternion targetRotation;
 	private Side turnDirection = Side.Right;
 	private Direction currentDirection;
-	private Movement movementState = Movement.STRAIGHT;
 	private Vector3 targetPoint;
-	Vector3 [] targetPoints;
-	int pointIndex = 0;
+	private Vector3 rotatePoint;
+	private float turnAngle = 0f;
+	private float targetAngle = 0f;
+
+
 
 	// Positioning
+	private Movement movementState = Movement.STRAIGHT;
+
 	int roadbuildingZ = 0;
 	int roadbuildingX = 0;
 
@@ -37,17 +42,10 @@ public class GameLogic : MonoBehaviour {
 		levelManager = new Levels ();
 		instantiateLevel (levelManager.getNextLevel());
 
-		pointIndex++;
-
 		targetRotation = mainCamera.transform.rotation;
 
 		currentDirection = Direction.NORTH;
 	}
-
-	private float turnAngle = 0f;
-	private float targetAngle = 0f;
-	private float rotateSpeed = 1f;
-	private Vector3 rotatePoint;
 	
 	// Update is called once per frame
 	void Update () {
@@ -61,7 +59,7 @@ public class GameLogic : MonoBehaviour {
 			turnDirection = Side.Left;
 		}
 			
-		mainCamera.transform.rotation = Quaternion.Lerp (mainCamera.transform.rotation, targetRotation , 2.3f * Time.deltaTime);
+		mainCamera.transform.rotation = Quaternion.Lerp (mainCamera.transform.rotation, targetRotation , turnCameraSpeed * Time.deltaTime);
 	}
 
 	Vector3 getRotatePointOffset() {
@@ -179,9 +177,6 @@ public class GameLogic : MonoBehaviour {
 				mainCamera.transform.position = rotatePoint + offset + new Vector3 (0, .2f, 0);
 				movementState = Movement.STRAIGHT;
 				mainCamera.transform.rotation = targetRotation;
-
-				targetPoint = targetPoints [pointIndex];
-				pointIndex++;
 			}
 			break;
 		case Movement.TURN_RIGHT:
@@ -193,9 +188,6 @@ public class GameLogic : MonoBehaviour {
 				mainCamera.transform.position = rotatePoint + offset + new Vector3 (0, .2f, 0);
 				movementState = Movement.STRAIGHT;
 				mainCamera.transform.rotation = targetRotation;
-
-				targetPoint = targetPoints [pointIndex];
-				pointIndex++;
 			}
 			break;
 		}
@@ -223,6 +215,9 @@ public class GameLogic : MonoBehaviour {
 
 	private void instantiateLevel(Level level) {
 		foreach (RoadSegment segment in level.road) {
+			foreach (KeyValuePair<Side, EnvironmentObject> environmentObject in segment.environmentObjects) {
+				instantiateEnvironmentObject (environmentObject.Value, roadbuildingX, roadbuildingZ, segment.road, currentDirection, environmentObject.Key);
+			}
 			instantiateRoad (segment.road, roadbuildingX, roadbuildingZ, currentDirection);
 		}
 		targetPoint = new Vector3 (roadbuildingX * 2, 0, roadbuildingZ * 2);
@@ -313,7 +308,7 @@ public class Sign : EnvironmentObject {
 
 public struct RoadSegment {
 	public Road road;
-	KeyValuePair<Side, EnvironmentObject>[] environmentObjects;
+	public KeyValuePair<Side, EnvironmentObject>[] environmentObjects;
 
 	public RoadSegment(Road road, KeyValuePair<Side, EnvironmentObject>[] environmentObjects) {
 		this.road = road;
