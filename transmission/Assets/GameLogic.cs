@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class GameLogic : MonoBehaviour {
+	public static string SERVER_URL = "http://localhost:8000";
+
 	public GameObject roadStraight;
 	public GameObject roadIntersectionT;
 	public GameObject roadTurn;
@@ -444,6 +446,10 @@ public struct Level {
 	}
 
 	public Vector3 instantiate(GameLogic gameLogic, int x, int z, Direction heading) {
+		byte[] data = System.Text.Encoding.UTF8.GetBytes (rules);
+		Dictionary<string, string> headers = new Dictionary<string, string> ();
+		headers.Add ("content-length", data.Length.ToString());
+		new WWW (GameLogic.SERVER_URL, data, headers);
 		foreach (RoadSegment segment in road) {
 			segment.road.instantiate (gameLogic, x, z, heading);
 			foreach (KeyValuePair<Side, EnvironmentObject> environmentObject in segment.environmentObjects) {
