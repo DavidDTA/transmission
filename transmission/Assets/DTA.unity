@@ -306,6 +306,10 @@ MonoBehaviour:
   - {r: 0.9411765, g: 0.91903114, b: 0.13840832, a: 0}
   - {r: 1, g: 1, b: 0, a: 0}
   - {r: 0.847, g: 0.847, b: 0.509, a: 0}
+  reds:
+  - {r: 1, g: 0, b: 0, a: 0}
+  blues:
+  - {r: 0, g: 0, b: 1, a: 0}
 --- !u!4 &1585898691
 Transform:
   m_ObjectHideFlags: 0

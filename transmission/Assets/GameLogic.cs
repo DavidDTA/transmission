@@ -12,6 +12,8 @@ public class GameLogic : MonoBehaviour {
 	public GameObject mainCamera;
 	public Color[] greens;
 	public Color[] yellows;
+	public Color[] reds;
+	public Color[] blues;
 
 	// speed constants
 	private float speed = 1.8f;
@@ -351,6 +353,12 @@ public abstract class EnvironmentObject {
 		}
 		if (color == Color.green) {
 			return gameLogic.greens;
+		}
+		if (color == Color.red) {
+			return gameLogic.reds;
+		}
+		if (color == Color.blue) {
+			return gameLogic.blues;
 		}
 		throw new MissingReferenceException ("Unknown color");
 	}
