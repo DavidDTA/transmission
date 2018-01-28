@@ -10,38 +10,46 @@ public class GameLogic : MonoBehaviour {
 	public GameObject mainCamera;
 
 	// speed/acceleration constants
-	private float speed = 0.8f;
+	private float speed = 1.8f;
 	private float deceleration = 0.988f;
 	private float acceleration = 1.01f;
 
 	// Used for turning
-	private bool isTurning = false;
-	private GameObject targetIntersection;
 	private Quaternion targetRotation;
 	private Side? turnDirection = null;
+	private Direction currentDirection;
+	private Movement movementState = Movement.STRAIGHT;
+	private Vector3 targetPoint;
 
 	// Use this for initialization
 	void Start () {
 		roadStraight.transform.localScale = new Vector3 (1, 1, -1);
 		roadIntersectionT.transform.localScale = new Vector3 (1, 1, -1);
 		instantiateRoad (Road.STRAIGHT, 0, 0, Direction.NORTH);
-		instantiateRoad (Road.TURN_LEFT, 0, 1, Direction.NORTH);
-		instantiateRoad (Road.TURN_RIGHT, -1, 1, Direction.WEST);
-		instantiateRoad (Road.BRANCH_LEFT, -1, 2, Direction.NORTH);
-		instantiateRoad (Road.TURN_RIGHT, -1, 3, Direction.NORTH);
-		instantiateRoad (Road.TURN_LEFT, 0, 3, Direction.EAST);
-
+		instantiateRoad (Road.STRAIGHT, 0, 1, Direction.NORTH);
+		instantiateRoad (Road.STRAIGHT, 0, 2, Direction.NORTH);
+		instantiateRoad (Road.INTERSECTION_T, 0, 3, Direction.NORTH);
 		instantiateEnvironmentObject (new Tree (Color.blue), 0, 1, Road.STRAIGHT, Direction.NORTH, Side.Right);
-
-		targetIntersection = instantiateRoad (Road.INTERSECTION_T, 0, 4, Direction.NORTH);
+		instantiateRoad (Road.STRAIGHT, 1, 3, Direction.WEST);
+		instantiateRoad (Road.STRAIGHT, 2, 3, Direction.WEST);
+		instantiateRoad (Road.INTERSECTION_T, 3, 3, Direction.WEST);
+		instantiateRoad (Road.STRAIGHT, 3, 2, Direction.SOUTH);
+		instantiateRoad (Road.STRAIGHT, 3, 1, Direction.SOUTH);
+		targetPoint = new Vector3 (0, 0, 6);
 		targetRotation = mainCamera.transform.rotation;
+
+		currentDirection = Direction.NORTH;
 	}
 
-	private float angle = 0f;
-	private float rotateSpeed = 0.001f;
+	private float turnAngle = 0f;
+	private float targetAngle = 0f;
+	private float rotateSpeed = 1f;
+	private Vector3 rotatePoint;
 	
 	// Update is called once per frame
 	void Update () {
+		MoveCar ();
+
 		// Listen for left and right turns.
 		if (Input.GetKeyDown (KeyCode.RightArrow)) {
 			turnDirection = Side.Right;
@@ -49,20 +57,121 @@ public class GameLogic : MonoBehaviour {
 		if (Input.GetKeyDown (KeyCode.LeftArrow)) {
 			turnDirection = Side.Left;
 		}
-
-		mainCamera.transform.position += new Vector3(
-			Camera.main.transform.forward.x,
-			0f,
-			Camera.main.transform.forward.z
-		) * speed * Time.deltaTime;
-
-		angle += rotateSpeed * Time.deltaTime;
-
-		var offset = new Vector3(Mathf.Sin(angle), 0, Mathf.Cos(angle) * 10);
-		//mainCamera.transform.position = targetIntersection.transform.position + offset;
-		mainCamera.transform.rotation = Quaternion.Lerp (mainCamera.transform.rotation, targetRotation , 1.5f * Time.deltaTime);
+			
+		mainCamera.transform.rotation = Quaternion.Lerp (mainCamera.transform.rotation, targetRotation , 3.3f * Time.deltaTime);
 	}
 
+	Vector3 getRotatePointOffset() {
+		int x = 0;
+		int y = 0;
+		if (movementState == Movement.TURN_RIGHT) {
+			switch (currentDirection) {
+			case Direction.NORTH:
+				x += 1;
+				y -= 1;
+				break;
+			case Direction.EAST:
+				x -= 1;
+				y -= 1;
+				break;
+			case Direction.SOUTH:
+				x -= 1;
+				y += 1;
+				break;
+			case Direction.WEST:
+				x += 1;
+				y += 1;
+				break;
+			}
+		} else if (movementState == Movement.TURN_LEFT) {
+			switch (currentDirection) {
+			case Direction.NORTH:
+				x -= 1;
+				y -= 1;
+				break;
+			case Direction.EAST:
+				x -= 1;
+				y += 1;
+				break;
+			case Direction.SOUTH:
+				x += 1;
+				y += 1;
+				break;
+			case Direction.WEST:
+				x += 1;
+				y -= 1;
+				break;
+			}
+		}
+		return new Vector3 (x, 0, y);
+	}
+
+	void setTurnRight() {
+		targetRotation = mainCamera.transform.rotation * Quaternion.AngleAxis (90, Vector3.up);
+		movementState = Movement.TURN_RIGHT;
+		turnAngle = -Mathf.PI;
+		turnAngle -= (Mathf.PI / 2f) * (float) currentDirection;
+		targetAngle = turnAngle - Mathf.PI / 2;
+		rotatePoint = targetPoint + getRotatePointOffset();
+		currentDirection = (Direction)(((int)currentDirection + 1) % 4);
+	}
+
+	void setTurnLeft() {
+		targetRotation = mainCamera.transform.rotation * Quaternion.AngleAxis (-90, Vector3.up);
+		movementState = Movement.TURN_RIGHT;
+		turnAngle = Mathf.PI;
+		turnAngle += (Mathf.PI / 2f) * (float) currentDirection;
+		targetAngle = turnAngle + Mathf.PI / 2;
+		rotatePoint = targetPoint + getRotatePointOffset();
+		currentDirection = (Direction)(((int)currentDirection - 1) % 4);
+	}
+
+	Vector3 getCarPos() {
+		return new Vector3 (
+			mainCamera.transform.position.x,
+			0f,
+			mainCamera.transform.position.z
+		);
+	}
+
+	void MoveCar() {
+		// Move car; either to continue straight or to turn.
+		switch (movementState) {
+		case Movement.STRAIGHT:
+			mainCamera.transform.position += new Vector3 (
+					mainCamera.transform.forward.x,
+					0f,
+					mainCamera.transform.forward.z
+				) * speed * Time.deltaTime;
+			if (Vector3.Distance(getCarPos(), targetPoint) < 1) {
+				setTurnRight ();
+			}
+			break;
+		case Movement.TURN_LEFT:
+			turnAngle += rotateSpeed * Time.deltaTime;
+			var offset = new Vector3 (Mathf.Cos (turnAngle), 0, Mathf.Sin (turnAngle)) * 1f;
+			mainCamera.transform.position = rotatePoint
+				+ offset
+				+ new Vector3 (0, .2f, 0);
+			if (Mathf.Abs (turnAngle - targetAngle) < 0.1f) {
+				movementState = Movement.STRAIGHT;
+			}
+			break;
+		case Movement.TURN_RIGHT:
+			turnAngle -= rotateSpeed * Time.deltaTime;
+			offset = new Vector3 (Mathf.Cos (turnAngle), 0, Mathf.Sin (turnAngle)) * 1f;
+			Debug.Log (offset);
+			mainCamera.transform.position = rotatePoint + offset + new Vector3 (0, .2f, 0);
+			if (Mathf.Abs ((turnAngle % (2 * Mathf.PI)) - (targetAngle % (2 * Mathf.PI))) < 0.03f) {
+				offset = new Vector3 (Mathf.Cos (targetAngle), 0, Mathf.Sin (targetAngle)) * 1f;
+				mainCamera.transform.position = rotatePoint + offset + new Vector3 (0, .2f, 0);
+				movementState = Movement.STRAIGHT;
+				targetPoint = new Vector3 (6, 0, 6);
+				mainCamera.transform.rotation = targetRotation;
+			}
+			break;
+		}
+	}
 
 	private GameObject instantiateRoad(Road roadType, int x, int z, Direction heading) {
 		switch (roadType) {
@@ -108,6 +217,10 @@ public class GameLogic : MonoBehaviour {
 
 enum Direction {
 	NORTH = 0, EAST = 1, SOUTH = 2, WEST = 3
+}
+
+enum Movement {
+	STRAIGHT, TURN_LEFT, TURN_RIGHT
 }
 
 enum Side {Right, Left};
