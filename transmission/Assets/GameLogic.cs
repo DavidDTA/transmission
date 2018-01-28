@@ -16,26 +16,35 @@ public class GameLogic : MonoBehaviour {
 
 	// Used for turning
 	private Quaternion targetRotation;
-	private Side? turnDirection = null;
+	private Side turnDirection = Side.Right;
 	private Direction currentDirection;
 	private Movement movementState = Movement.STRAIGHT;
 	private Vector3 targetPoint;
+	Vector3 [] targetPoints;
+	int pointIndex = 0;
 
 	// Use this for initialization
 	void Start () {
 		roadStraight.transform.localScale = new Vector3 (1, 1, -1);
 		roadIntersectionT.transform.localScale = new Vector3 (1, 1, -1);
 		instantiateRoad (Road.STRAIGHT, 0, 0, Direction.NORTH);
-		instantiateRoad (Road.STRAIGHT, 0, 1, Direction.NORTH);
-		instantiateRoad (Road.STRAIGHT, 0, 2, Direction.NORTH);
-		instantiateRoad (Road.INTERSECTION_T, 0, 3, Direction.NORTH);
-		instantiateEnvironmentObject (new Tree (Color.blue), 0, 1, Road.STRAIGHT, Direction.NORTH, Side.Right);
-		instantiateRoad (Road.STRAIGHT, 1, 3, Direction.WEST);
-		instantiateRoad (Road.STRAIGHT, 2, 3, Direction.WEST);
-		instantiateRoad (Road.INTERSECTION_T, 3, 3, Direction.WEST);
-		instantiateRoad (Road.STRAIGHT, 3, 2, Direction.SOUTH);
-		instantiateRoad (Road.STRAIGHT, 3, 1, Direction.SOUTH);
-		targetPoint = new Vector3 (0, 0, 6);
+		instantiateRoad (Road.INTERSECTION_T, 0, 1, Direction.NORTH);
+		instantiateRoad (Road.STRAIGHT, -1, 1, Direction.EAST);
+		instantiateRoad (Road.INTERSECTION_T, -2, 1, Direction.EAST);
+		instantiateRoad (Road.STRAIGHT, -2, 0, Direction.SOUTH);
+		instantiateRoad (Road.INTERSECTION_T, -2, -1, Direction.SOUTH);
+		instantiateRoad (Road.STRAIGHT, -1, -1, Direction.WEST);
+		instantiateRoad (Road.INTERSECTION_T, 0, -1, Direction.WEST);
+		targetPoints = new Vector3[] {
+			new Vector3 (0, 0, 2),
+			new Vector3 (-4, 0, 2),
+			new Vector3 (-4, 0, -2),
+			new Vector3 (0, 0, -2)
+		};
+
+		targetPoint = targetPoints [pointIndex];
+		pointIndex++;
+
 		targetRotation = mainCamera.transform.rotation;
 
 		currentDirection = Direction.NORTH;
@@ -106,24 +115,46 @@ public class GameLogic : MonoBehaviour {
 		return new Vector3 (x, 0, y);
 	}
 
-	void setTurnRight() {
-		targetRotation = mainCamera.transform.rotation * Quaternion.AngleAxis (90, Vector3.up);
-		movementState = Movement.TURN_RIGHT;
-		turnAngle = -Mathf.PI;
-		turnAngle -= (Mathf.PI / 2f) * (float) currentDirection;
-		targetAngle = turnAngle - Mathf.PI / 2;
-		rotatePoint = targetPoint + getRotatePointOffset();
-		currentDirection = (Direction)(((int)currentDirection + 1) % 4);
+	float getCurrentAngle() {
+		switch (currentDirection) {
+		case Direction.NORTH:
+			return Mathf.PI / 2.0f;
+		case Direction.EAST:
+			return 0;
+		case Direction.SOUTH:
+			return -Mathf.PI / 2.0f;
+		case Direction.WEST:
+			return Mathf.PI;
+		}
+		return 0;
 	}
 
-	void setTurnLeft() {
-		targetRotation = mainCamera.transform.rotation * Quaternion.AngleAxis (-90, Vector3.up);
-		movementState = Movement.TURN_RIGHT;
-		turnAngle = Mathf.PI;
-		turnAngle += (Mathf.PI / 2f) * (float) currentDirection;
-		targetAngle = turnAngle + Mathf.PI / 2;
-		rotatePoint = targetPoint + getRotatePointOffset();
-		currentDirection = (Direction)(((int)currentDirection - 1) % 4);
+	int mod(int x, int m) {
+		return (x%m + m)%m;
+	}
+
+	void setTurn(Side direction) {
+		switch (direction) {
+		case Side.Right:
+			targetRotation = mainCamera.transform.rotation * Quaternion.AngleAxis (90, Vector3.up);
+			movementState = Movement.TURN_RIGHT;
+			turnAngle = getCurrentAngle () + (Mathf.PI / 2f);
+			targetAngle = turnAngle - Mathf.PI / 2;
+			rotatePoint = targetPoint + getRotatePointOffset ();
+			currentDirection = (Direction)(mod((int)currentDirection + 1, 4));
+			break;
+		case Side.Left: 
+			targetRotation = mainCamera.transform.rotation * Quaternion.AngleAxis (-90, Vector3.up);
+			movementState = Movement.TURN_LEFT;
+			turnAngle = getCurrentAngle () - (Mathf.PI / 2f);
+			Debug.Log (currentDirection);
+
+			Debug.Log (turnAngle);
+			targetAngle = turnAngle + Mathf.PI / 2;
+			rotatePoint = targetPoint + getRotatePointOffset ();
+			currentDirection = (Direction)(mod((int)currentDirection - 1, 4));
+			break;
+		}
 	}
 
 	Vector3 getCarPos() {
@@ -144,30 +175,35 @@ public class GameLogic : MonoBehaviour {
 					mainCamera.transform.forward.z
 				) * speed * Time.deltaTime;
 			if (Vector3.Distance(getCarPos(), targetPoint) < 1) {
-				setTurnRight ();
+				setTurn(turnDirection);
 			}
 			break;
 		case Movement.TURN_LEFT:
 			turnAngle += rotateSpeed * Time.deltaTime;
 			var offset = new Vector3 (Mathf.Cos (turnAngle), 0, Mathf.Sin (turnAngle)) * 1f;
-			mainCamera.transform.position = rotatePoint
-				+ offset
-				+ new Vector3 (0, .2f, 0);
-			if (Mathf.Abs (turnAngle - targetAngle) < 0.1f) {
-				movementState = Movement.STRAIGHT;
-			}
-			break;
-		case Movement.TURN_RIGHT:
-			turnAngle -= rotateSpeed * Time.deltaTime;
-			offset = new Vector3 (Mathf.Cos (turnAngle), 0, Mathf.Sin (turnAngle)) * 1f;
-			Debug.Log (offset);
 			mainCamera.transform.position = rotatePoint + offset + new Vector3 (0, .2f, 0);
 			if (Mathf.Abs ((turnAngle % (2 * Mathf.PI)) - (targetAngle % (2 * Mathf.PI))) < 0.03f) {
 				offset = new Vector3 (Mathf.Cos (targetAngle), 0, Mathf.Sin (targetAngle)) * 1f;
 				mainCamera.transform.position = rotatePoint + offset + new Vector3 (0, .2f, 0);
 				movementState = Movement.STRAIGHT;
-				targetPoint = new Vector3 (6, 0, 6);
 				mainCamera.transform.rotation = targetRotation;
+
+				targetPoint = targetPoints [pointIndex];
+				pointIndex++;
+			}
+			break;
+		case Movement.TURN_RIGHT:
+			turnAngle -= rotateSpeed * Time.deltaTime;
+			offset = new Vector3 (Mathf.Cos (turnAngle), 0, Mathf.Sin (turnAngle)) * 1f;
+			mainCamera.transform.position = rotatePoint + offset + new Vector3 (0, .2f, 0);
+			if (Mathf.Abs ((turnAngle % (2 * Mathf.PI)) - (targetAngle % (2 * Mathf.PI))) < 0.03f) {
+				offset = new Vector3 (Mathf.Cos (targetAngle), 0, Mathf.Sin (targetAngle)) * 1f;
+				mainCamera.transform.position = rotatePoint + offset + new Vector3 (0, .2f, 0);
+				movementState = Movement.STRAIGHT;
+				mainCamera.transform.rotation = targetRotation;
+
+				targetPoint = targetPoints [pointIndex];
+				pointIndex++;
 			}
 			break;
 		}
