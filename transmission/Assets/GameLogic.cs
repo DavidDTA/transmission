@@ -16,7 +16,7 @@ public class GameLogic : MonoBehaviour {
 	public Color[] blues;
 
 	// speed constants
-	private float speed = 1.8f;
+	private float speed = 3.8f;
 	private float turnCameraSpeed = 3.8f; 
 	private float rotateSpeed = 1.5f;
 
@@ -487,6 +487,8 @@ class Levels {
 		"If one side of the road has more yellow trees, turn to that side",
 		Side.Left,
 		new RoadSegment[] {
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
 			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
 				new KeyValuePair<Side, EnvironmentObject>(Side.Left, new Tree(Color.yellow)),
 			}),
@@ -514,15 +516,20 @@ class Levels {
 		"If one side of the road has more yellow trees, turn to that side",
 		Side.Right,
 		new RoadSegment[] {
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
 			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
 				new KeyValuePair<Side, EnvironmentObject>(Side.Right, new Tree(Color.yellow)),
 			}),
 			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
 				new KeyValuePair<Side, EnvironmentObject>(Side.Right, new Tree(Color.green)),
 			}),
-			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
 			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
 				new KeyValuePair<Side, EnvironmentObject>(Side.Left, new Tree(Color.yellow)),
+				new KeyValuePair<Side, EnvironmentObject>(Side.Right, new Tree(Color.green)),
+			}),
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
+				new KeyValuePair<Side, EnvironmentObject>(Side.Left, new Tree(Color.yellow)),
+				new KeyValuePair<Side, EnvironmentObject>(Side.Right, new Tree(Color.yellow)),
 			}),
 			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
 				new KeyValuePair<Side, EnvironmentObject>(Side.Left, new Tree(Color.green)),
@@ -532,15 +539,13 @@ class Levels {
 		});
 
 	public static Level level3 = new Level(
-		"If one side of the road has more yellow trees, turn to that side." +
-		"UNLESS there is a red stop sign at the intersection, in which case you always turn right",
-		Side.Left,
+		"If one side of the road has more yellow trees, turn to that side \n\n" +
+		"UNLESS there is a red tree. Red trees mean turn right always",
+		Side.Right,
 		new RoadSegment[] {
 			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
 			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
 				new KeyValuePair<Side, EnvironmentObject>(Side.Right, new Tree(Color.yellow)),
-				new KeyValuePair<Side, EnvironmentObject>(Side.Left, new Tree(Color.yellow)),
-				new KeyValuePair<Side, EnvironmentObject>(Side.Right, new Tree(Color.green)),
 			}),
 			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
 			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
@@ -550,8 +555,6 @@ class Levels {
 				new KeyValuePair<Side, EnvironmentObject>(Side.Left, new Tree(Color.green)),
 				new KeyValuePair<Side, EnvironmentObject>(Side.Left, new Tree(Color.yellow)),
 			}),
-			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
-			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
 			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
 				new KeyValuePair<Side, EnvironmentObject>(Side.Right, new Sign(Color.blue)),
 			}),
@@ -559,19 +562,26 @@ class Levels {
 		});
 
 	public static Level level4 = new Level(
-		"If one side of the road has more yellow trees, turn to that side." +
-		"UNLESS there is a red stop sign at the intersection, in which case you always turn right",
+		"If one side of the road has more yellow trees, turn to that side \n\n" +
+		"UNLESS there is a red tree. Red trees mean turn right always",
 		Side.Right,
 		new RoadSegment[] {
 			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
-			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
-				new KeyValuePair<Side, EnvironmentObject>(Side.Right, new Tree(Color.yellow)),
-				new KeyValuePair<Side, EnvironmentObject>(Side.Left, new Tree(Color.yellow)),
-				new KeyValuePair<Side, EnvironmentObject>(Side.Right, new Tree(Color.yellow)),
-			}),
 			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),			
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
+				new KeyValuePair<Side, EnvironmentObject>(Side.Left, new Tree(Color.yellow)),
+			}),
 			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
 				new KeyValuePair<Side, EnvironmentObject>(Side.Left, new Tree(Color.green)),
+			}),
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
+				new KeyValuePair<Side, EnvironmentObject>(Side.Left, new Tree(Color.blue)),
+				new KeyValuePair<Side, EnvironmentObject>(Side.Right, new Tree(Color.green)),
+			}),
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
+				new KeyValuePair<Side, EnvironmentObject>(Side.Left, new Tree(Color.red)),
+				new KeyValuePair<Side, EnvironmentObject>(Side.Right, new Tree(Color.green)),
 			}),
 			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
 				new KeyValuePair<Side, EnvironmentObject>(Side.Left, new Tree(Color.yellow)),
@@ -580,19 +590,20 @@ class Levels {
 			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
 			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
 			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
-				new KeyValuePair<Side, EnvironmentObject>(Side.Left, new Sign(Color.red)),
+				new KeyValuePair<Side, EnvironmentObject>(Side.Left, new Tree(Color.yellow)),
 			}),
 			new RoadSegment(new Road.IntersectionT(), new KeyValuePair<Side, EnvironmentObject>[] {}),
 		});
 
 	public static Level level5 = new Level(
-		"If one side of the road has more yellow trees, turn to that side." +
-		"UNLESS there is a red stop sign at the intersection, in which case you always turn right\n" +
-		"If you see a black tree, switch yellow and green all other rules",
+		"If one side of the road has more yellow trees, turn to that side \n\n" +
+		"UNLESS there is a red tree. Red trees mean turn right always \n\n" +
+		"If you see a blue tree, switch yellow and green all other rules \n\n",
 		Side.Right,
 		new RoadSegment[] {
 			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
-			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
 				new KeyValuePair<Side, EnvironmentObject>(Side.Right, new Tree(Color.green)),
 				new KeyValuePair<Side, EnvironmentObject>(Side.Left, new Tree(Color.yellow)),
 				new KeyValuePair<Side, EnvironmentObject>(Side.Right, new Tree(Color.yellow)),
@@ -614,13 +625,14 @@ class Levels {
 		});
 
 	public static Level level6 = new Level(
-		"If one side of the road has more yellow trees, turn to that side." +
-		"UNLESS there is a red stop sign at the intersection, in which case you always turn right\n" +
-		"If you see a black tree, switch yellow and green for all other rules",
+		"If one side of the road has more yellow trees, turn to that side \n\n" +
+		"UNLESS there is a red tree. Red trees mean turn right always \n\n" +
+		"If you see a blue tree, switch yellow and green all other rules \n\n",
 		Side.Right,
 		new RoadSegment[] {
 			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
-			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
 				new KeyValuePair<Side, EnvironmentObject>(Side.Right, new Tree(Color.yellow)),
 			}),
 			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
@@ -629,7 +641,7 @@ class Levels {
 			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
 			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
 				new KeyValuePair<Side, EnvironmentObject>(Side.Right, new Tree(Color.green)),
-				new KeyValuePair<Side, EnvironmentObject>(Side.Left, new Tree(Color.black)),
+				new KeyValuePair<Side, EnvironmentObject>(Side.Left, new Tree(Color.blue)),
 			}),
 			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
 				new KeyValuePair<Side, EnvironmentObject>(Side.Right, new Tree(Color.yellow)),
@@ -638,18 +650,19 @@ class Levels {
 		});
 
 	public static Level level7 = new Level(
-		"If one side of the road has more yellow trees, turn to that side." +
-		"UNLESS there is a red stop sign at the intersection, in which case you always turn right\n" +
-		"If you see a black tree, switch yellow and green for all other rules\n" +
+		"If one side of the road has more yellow trees, turn to that side \n\n" +
+		"UNLESS there is a red tree. Red trees mean turn right always \n\n" +
+		"If you see a blue tree, switch yellow and green all other rules \n\n" +
 		"NEVER turn right twice in a row. If the other rules say to, turn left instead.",
 		Side.Left,
 		new RoadSegment[] {
 			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
-			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
 				new KeyValuePair<Side, EnvironmentObject>(Side.Left, new Tree(Color.yellow)),
 			}),
 			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
-				new KeyValuePair<Side, EnvironmentObject>(Side.Left, new Tree(Color.green)),
+				new KeyValuePair<Side, EnvironmentObject>(Side.Left, new Tree(Color.red)),
 			}),
 			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
 			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
@@ -664,12 +677,14 @@ class Levels {
 		});
 
 	public static Level level8 = new Level(
-		"If one side of the road has more yellow trees, turn to that side." +
-		"UNLESS there is a red stop sign at the intersection, in which case you always turn right\n" +
-		"If you see a black tree, switch yellow and green for all other rules\n" +
+		"If one side of the road has more yellow trees, turn to that side \n\n" +
+		"UNLESS there is a red tree. Red trees mean turn right always \n\n" +
+		"If you see a blue tree, switch yellow and green all other rules \n\n" +
 		"NEVER turn right twice in a row. If the other rules say to, turn left instead.",
 		Side.Right,
 		new RoadSegment[] {
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
 			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
 			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
 				new KeyValuePair<Side, EnvironmentObject>(Side.Right, new Tree(Color.yellow)),
