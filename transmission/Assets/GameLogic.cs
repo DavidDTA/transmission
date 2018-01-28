@@ -577,6 +577,7 @@ class Levels {
 		Side.Right,
 		new RoadSegment[] {
 			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
 			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
 				new KeyValuePair<Side, EnvironmentObject>(Side.Right, new Tree(Color.yellow)),
 			}),
@@ -667,28 +668,32 @@ class Levels {
 		"If one side of the road has more yellow trees, turn to that side \n\n" +
 		"UNLESS there is a red tree. Red trees mean turn right always \n\n" +
 		"If you see a blue tree, switch yellow and green all other rules \n\n",
-		Side.Right,
+		Side.Left,
 		new RoadSegment[] {
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
 			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
 			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
 			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
 				new KeyValuePair<Side, EnvironmentObject>(Side.Right, new Tree(Color.green)),
 				new KeyValuePair<Side, EnvironmentObject>(Side.Left, new Tree(Color.yellow)),
-				new KeyValuePair<Side, EnvironmentObject>(Side.Right, new Tree(Color.yellow)),
 			}),
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
 			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
 			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
 				new KeyValuePair<Side, EnvironmentObject>(Side.Left, new Tree(Color.green)),
 			}),
 			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
 				new KeyValuePair<Side, EnvironmentObject>(Side.Left, new Tree(Color.green)),
-				new KeyValuePair<Side, EnvironmentObject>(Side.Right, new Tree(Color.yellow)),
+				new KeyValuePair<Side, EnvironmentObject>(Side.Left, new Tree(Color.yellow)),
 			}),
 			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
 			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
-			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
-				new KeyValuePair<Side, EnvironmentObject>(Side.Left, new Sign(Color.red)),
-			}),
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
+			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
 			new RoadSegment(new Road.IntersectionT(), new KeyValuePair<Side, EnvironmentObject>[] {}),
 		});
 
@@ -716,7 +721,7 @@ class Levels {
 				new KeyValuePair<Side, EnvironmentObject>(Side.Right, new Tree(Color.yellow)),
 			}),
 			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {
-				new KeyValuePair<Side, EnvironmentObject>(Side.Left, new Tree(Color.green)),
+				new KeyValuePair<Side, EnvironmentObject>(Side.Right, new Tree(Color.green)),
 			}),
 			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
 			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
