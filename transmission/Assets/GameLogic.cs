@@ -246,7 +246,11 @@ public class GameLogic : MonoBehaviour {
 	private Vector3 environmentObjectOffset(Road roadType, Direction heading, Side side) {
 		switch (roadType) {
 		case Road.STRAIGHT:
-			return new Vector3 (side == Side.Left ? -.875f : .875f, 0, Random.value * 2 - 1);
+			if (heading == Direction.NORTH || heading == Direction.SOUTH) {
+				return new Vector3 (side == Side.Left ? -.875f : .875f, 0, Random.value * 2 - 1);
+			} else {
+				return new Vector3 (Random.value * 2 - 1, 0, side == Side.Left ? -.875f : .875f);
+			}
 		default:
 			Debug.Log ("Unimplemented environment offset");
 			return Vector3.zero;
