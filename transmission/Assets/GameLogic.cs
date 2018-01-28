@@ -237,7 +237,11 @@ public abstract class Road {
 			instantiate (gameLogic.roadStraight, x, z, (int) heading);
 		}
 		public override Vector3 environmentObjectOffset(Direction heading, Side side) {
-			return shiftFrame(new Vector3 (side == Side.Left ? .125f : 1.875f, 0, Random.value * 2));
+			Vector3 offset = shiftFrame(new Vector3 (side == Side.Left ? .125f : 1.875f, 0, Random.value * 2));
+			if (heading == Direction.EAST || heading == Direction.WEST) {
+				return new Vector3 (offset.z, 0, offset.x);
+			}
+			return offset;
 		}
 		public override void updatePositionAndHeading (ref int x, ref int z, ref Direction heading) {
 			moveTowardHeading (ref x, ref z, heading);
@@ -415,8 +419,9 @@ class Levels {
 	Level[] levels = new Level[] { level1, level2, level3, level4, level5, level6, level7, level8 }; 
 
 	public Level getNextLevel() {
-		return levels[levelIndex];
+		Level level = levels[levelIndex];
 		levelIndex = (levelIndex + 1) % levels.Length;
+		return level;
 	}
 
 	public static Level level1 = new Level(
