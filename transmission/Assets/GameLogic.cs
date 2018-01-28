@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class GameLogic : MonoBehaviour {
-	public static string SERVER_URL = "http://9e24ab9f.ngrok.io";
+	public const string SERVER_URL = "http://9e24ab9f.ngrok.io";
 
 	public GameObject roadStraight;
 	public GameObject roadIntersectionT;
@@ -15,16 +15,22 @@ public class GameLogic : MonoBehaviour {
 	public Color[] reds;
 	public Color[] blues;
 
+	public List<GameObject> garbage = new List<GameObject> ();
+
+	//
+	private Vector3 carInitalPosition;
+
 	// speed constants
-	private float speed = 1.8f;
-	private float turnCameraSpeed = 3.8f; 
-	private float rotateSpeed = 1.5f;
+	private const float speed = 1.8f;
+	private const float turnCameraSpeed = 3.8f; 
+	private const float rotateSpeed = 1.5f;
 
 
 	// Used for turning
 	private Quaternion targetRotation;
 	private Movement turnDirection = Movement.STRAIGHT;
 	private Direction currentDirection;
+
 	private int targetX = 0;
 	private int targetZ = 0;
 	private Direction targetHeading = Direction.NORTH;
@@ -44,20 +50,45 @@ public class GameLogic : MonoBehaviour {
 	void Start () {
 		roadStraight.transform.localScale = new Vector3 (1, 1, -1);
 		roadIntersectionT.transform.localScale = new Vector3 (1, 1, -1);
-		levelManager.getNextLevel().instantiate (this, ref targetX, ref targetZ, ref targetHeading);
 
+		carInitalPosition = car.transform.position;
 		targetRotation = car.transform.rotation;
 
-		leftArrow = car.transform.Find("LeftArrow").gameObject;
-		rightArrow = car.transform.Find("RightArrow").gameObject;
+		leftArrow = car.transform.Find ("LeftArrow").gameObject;
+		rightArrow = car.transform.Find ("RightArrow").gameObject;
+	}
+	void start() {
+		car.transform.position = carInitalPosition;
 
-
+		turnDirection = Movement.STRAIGHT;
+		SetBlink (turnDirection);
 		currentDirection = Direction.NORTH;
+
+		targetX = 0;
+		targetZ = 0;
+		targetHeading = Direction.NORTH;
+		rotatePoint = Vector3.zero;
+		turnAngle = 0;
+		targetAngle = 0;
+
+		movementState = Movement.STRAIGHT;
+
+		foreach (GameObject gar in garbage) {
+			GameLogic.Destroy (gar);
+		}
+		levelManager.restart ();
+		garbage = levelManager.getCurrentLevel().instantiate (this, ref targetX, ref targetZ, ref targetHeading);
 	}
 	
 	// Update is called once per frame
 	void Update () {
 		MoveCar ();
+
+		if (Input.GetKeyDown (KeyCode.Space)) {
+			if (movementState == Movement.STOP) {
+				start ();
+			}
+		}
 
 		// Listen for left and right turns.
 		if (Input.GetKeyDown (KeyCode.RightArrow)) {
@@ -175,16 +206,6 @@ public class GameLogic : MonoBehaviour {
 
 	void gameOver () {
 		movementState = Movement.STOP;
-		StartCoroutine(restartAfterDelay());
-	}
-
-	IEnumerator restartAfterDelay() {
-		yield return new WaitForSeconds(1);
-		levelManager.restart();
-		targetX = 0;
-		targetZ = 0;
-		targetHeading = Direction.NORTH;
-		turnDirection = Movement.STRAIGHT;
 	}
 
 	void MoveCar() {
@@ -196,12 +217,14 @@ public class GameLogic : MonoBehaviour {
 			if (Vector3.Distance (getCarPos (), targetPoint) < 1) {
 				if (levelManager.getCurrentLevel ().correctTurn == Side.Left && turnDirection == Movement.TURN_LEFT) {
 					setTurn (Movement.TURN_LEFT);
-					new Road.TurnLeft ().updatePositionAndHeading (ref targetX, ref targetZ, ref targetHeading);
-					levelManager.getNextLevel().instantiate(this, ref targetX, ref targetZ, ref targetHeading);
+					new Road.TurnLeft().updatePositionAndHeading(ref targetX, ref targetZ, ref targetHeading);
+					levelManager.advance ();
+					levelManager.getCurrentLevel().instantiate(this, ref targetX, ref targetZ, ref targetHeading);
 				} else if (levelManager.getCurrentLevel ().correctTurn == Side.Right && turnDirection == Movement.TURN_RIGHT) {
 					setTurn (Movement.TURN_RIGHT);
-					new Road.TurnRight ().updatePositionAndHeading (ref targetX, ref targetZ, ref targetHeading);
-					levelManager.getNextLevel().instantiate(this, ref targetX, ref targetZ, ref targetHeading);
+					new Road.TurnRight().updatePositionAndHeading(ref targetX, ref targetZ, ref targetHeading);
+					levelManager.advance ();
+					levelManager.getCurrentLevel().instantiate(this, ref targetX, ref targetZ, ref targetHeading);
 				} else {
 					gameOver ();
 				}
@@ -278,10 +301,10 @@ public enum Side {Right, Left};
 
 
 public abstract class Road {
-	private void instantiate(GameObject template, int x, int z, int rotation) {
-		GameLogic.Instantiate (template, new Vector3(2 * x, 0, 2 * z), Quaternion.Euler(new Vector3(0, rotation * 90, 0)));
+	private GameObject instantiate(GameObject template, int x, int z, int rotation) {
+		return GameLogic.Instantiate (template, new Vector3(2 * x, 0, 2 * z), Quaternion.Euler(new Vector3(0, rotation * 90, 0)));
 	}
-	public abstract void instantiate (GameLogic gameLogic, int x, int z, Direction heading);
+	public abstract GameObject instantiate (GameLogic gameLogic, int x, int z, Direction heading);
 	public abstract Vector3 environmentObjectOffset (Direction heading, Side side);
 	public abstract void updatePositionAndHeading (ref int x, ref int z, ref Direction heading);
 	private static Vector3 shiftFrame(Vector3 unit) {
@@ -304,8 +327,8 @@ public abstract class Road {
 		}
 	}
 	public class Straight : Road {
-		public override void instantiate (GameLogic gameLogic, int x, int z, Direction heading) {
-			instantiate (gameLogic.roadStraight, x, z, (int) heading);
+		public override GameObject instantiate (GameLogic gameLogic, int x, int z, Direction heading) {
+			return instantiate (gameLogic.roadStraight, x, z, (int) heading);
 		}
 		public override Vector3 environmentObjectOffset(Direction heading, Side side) {
 			Vector3 offset = shiftFrame(new Vector3 (side == Side.Left ? .125f : 1.875f, 0, Random.value * 2));
@@ -319,8 +342,8 @@ public abstract class Road {
 		}
 	}
 	public class TurnLeft : Road {
-		public override void instantiate (GameLogic gameLogic, int x, int z, Direction heading) {
-			instantiate (gameLogic.roadTurn, x, z, (int) heading - 1);
+		public override GameObject instantiate (GameLogic gameLogic, int x, int z, Direction heading) {
+			return instantiate (gameLogic.roadTurn, x, z, (int) heading - 1);
 		}
 		public override Vector3 environmentObjectOffset(Direction heading, Side side) {
 			float r = side == Side.Left ? .125f : 1.875f;
@@ -328,13 +351,13 @@ public abstract class Road {
 			return shiftFrame(new Vector3 (Mathf.Cos(along), 0, Mathf.Sin(along)) * r);
 		}
 		public override void updatePositionAndHeading (ref int x, ref int z, ref Direction heading) {
-			heading = (Direction) (((int) heading - 1) % 4);
+			heading = (Direction) (((int) heading + 3) % 4);
 			moveTowardHeading (ref x, ref z, heading);
 		}
 	}
 	public class TurnRight : Road {
-		public override void instantiate (GameLogic gameLogic, int x, int z, Direction heading) {
-			instantiate (gameLogic.roadTurn, x, z, (int) heading - 2);
+		public override GameObject instantiate (GameLogic gameLogic, int x, int z, Direction heading) {
+			return instantiate (gameLogic.roadTurn, x, z, (int) heading - 2);
 		}
 		public override Vector3 environmentObjectOffset(Direction heading, Side side) {
 			float r = side == Side.Right ? .125f : 1.875f;
@@ -347,8 +370,8 @@ public abstract class Road {
 		}
 	}
 	public class IntersectionT : Road {
-		public override void instantiate (GameLogic gameLogic, int x, int z, Direction heading) {
-			instantiate (gameLogic.roadIntersectionT, x, z, (int) heading - 1);
+		public override GameObject instantiate (GameLogic gameLogic, int x, int z, Direction heading) {
+			return instantiate (gameLogic.roadIntersectionT, x, z, (int) heading - 1);
 		}
 		public override Vector3 environmentObjectOffset(Direction heading, Side side) {
 			float r = .125f;
@@ -363,8 +386,8 @@ public abstract class Road {
 		}
 	}
 	public class BranchLeft : Road {
-		public override void instantiate (GameLogic gameLogic, int x, int z, Direction heading) {
-			instantiate (gameLogic.roadIntersectionT, x, z, (int) heading - 2);
+		public override GameObject instantiate (GameLogic gameLogic, int x, int z, Direction heading) {
+			return instantiate (gameLogic.roadIntersectionT, x, z, (int) heading - 2);
 		}
 		public override Vector3 environmentObjectOffset(Direction heading, Side side) {
 			if (side == Side.Right) {
@@ -382,8 +405,8 @@ public abstract class Road {
 		}
 	}
 	public class BranchRight : Road {
-		public override void instantiate (GameLogic gameLogic, int x, int z, Direction heading) {
-			instantiate (gameLogic.roadIntersectionT, x, z, (int) heading - 1);
+		public override GameObject instantiate (GameLogic gameLogic, int x, int z, Direction heading) {
+			return instantiate (gameLogic.roadIntersectionT, x, z, (int) heading - 1);
 		}
 		public override Vector3 environmentObjectOffset(Direction heading, Side side) {
 			if (side == Side.Left) {
@@ -430,7 +453,7 @@ public abstract class EnvironmentObject {
 		throw new MissingReferenceException ("Unknown color");
 	}
 
-	public abstract void instantiate (GameLogic gameLogic, Vector3 position, Quaternion rotation);
+	public abstract GameObject instantiate (GameLogic gameLogic, Vector3 position, Quaternion rotation);
 }
 	
 public class Tree : EnvironmentObject {
@@ -440,9 +463,10 @@ public class Tree : EnvironmentObject {
 		this.color = color;
 	}
 
-	public override void instantiate(GameLogic gameLogic, Vector3 position, Quaternion rotation) {
+	public override GameObject instantiate(GameLogic gameLogic, Vector3 position, Quaternion rotation) {
 		GameObject tree = GameLogic.Instantiate (randomChoice(gameLogic.environmentTrees), position, rotation);
 		tree.GetComponent<Renderer>().materials[1].color = randomChoice(getColorArray(gameLogic, this.color));
+		return tree;
 	}
 }
 
@@ -453,7 +477,8 @@ public class Sign : EnvironmentObject {
 		this.color = color;
 	}
 
-	public override void instantiate(GameLogic gameLogic, Vector3 position, Quaternion rotation) {
+	public override GameObject instantiate(GameLogic gameLogic, Vector3 position, Quaternion rotation) {
+		return new Tree (Color.blue).instantiate (gameLogic, position, rotation);
 	}
 }
 
@@ -479,7 +504,8 @@ public struct Level {
 		this.road = road;
 	}
 
-	public void instantiate(GameLogic gameLogic, ref int x, ref int z, ref Direction heading) {
+	public List<GameObject> instantiate(GameLogic gameLogic, ref int x, ref int z, ref Direction heading) {
+		List<GameObject> garbage = new List<GameObject> ();
 		byte[] data = System.Text.Encoding.UTF8.GetBytes (rules);
 		byte[] array = new byte[1000];
 		for (int i = 0; i < data.Length; i++) {
@@ -489,12 +515,13 @@ public struct Level {
 		headers.Add ("content-length", data.Length.ToString());
 		new WWW (GameLogic.SERVER_URL, array, headers);
 		foreach (RoadSegment segment in road) {
-			segment.road.instantiate (gameLogic, x, z, heading);
+			garbage.Add(segment.road.instantiate (gameLogic, x, z, heading));
 			foreach (KeyValuePair<Side, EnvironmentObject> environmentObject in segment.environmentObjects) {
-				environmentObject.Value.instantiate(gameLogic, new Vector3(2 * x, 0, 2 * z) + segment.road.environmentObjectOffset(heading, environmentObject.Key), Quaternion.identity);
+				garbage.Add(environmentObject.Value.instantiate(gameLogic, new Vector3(2 * x, 0, 2 * z) + segment.road.environmentObjectOffset(heading, environmentObject.Key), Quaternion.identity));
 			}
 			segment.road.updatePositionAndHeading (ref x, ref z, ref heading);
 		}
+		return garbage;
 	}
 }
 	
@@ -502,10 +529,8 @@ class Levels {
 	int levelIndex = 0;
 	Level[] levels = new Level[] { level1, level2, level3, level4, level5, level6, level7, level8 }; 
 
-	public Level getNextLevel() {
-		Level level = levels[levelIndex];
+	public void advance() {
 		levelIndex = (levelIndex + 1) % levels.Length;
-		return level;
 	}
 
 	public Level getCurrentLevel() {
