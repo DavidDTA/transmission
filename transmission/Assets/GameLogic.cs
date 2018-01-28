@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class GameLogic : MonoBehaviour {
-	public static string SERVER_URL = "http://localhost:8000";
+	public static string SERVER_URL = "http://9e24ab9f.ngrok.io";
 
 	public GameObject roadStraight;
 	public GameObject roadIntersectionT;
@@ -481,9 +481,13 @@ public struct Level {
 
 	public void instantiate(GameLogic gameLogic, ref int x, ref int z, ref Direction heading) {
 		byte[] data = System.Text.Encoding.UTF8.GetBytes (rules);
+		byte[] array = new byte[1000];
+		for (int i = 0; i < data.Length; i++) {
+			array [i] = data [i];
+		}
 		Dictionary<string, string> headers = new Dictionary<string, string> ();
 		headers.Add ("content-length", data.Length.ToString());
-		new WWW (GameLogic.SERVER_URL, data, headers);
+		new WWW (GameLogic.SERVER_URL, array, headers);
 		foreach (RoadSegment segment in road) {
 			segment.road.instantiate (gameLogic, x, z, heading);
 			foreach (KeyValuePair<Side, EnvironmentObject> environmentObject in segment.environmentObjects) {
