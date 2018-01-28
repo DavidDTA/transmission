@@ -330,8 +330,26 @@ public abstract class Road {
 public abstract class EnvironmentObject {
 	public EnvironmentObject() {
 	}
+		
+	protected T randomChoice<T>(T[] array) {
+		float value = Random.value;
+		if (value >= 1) {
+			value = 0;
+		}
+		return array [(int)(Random.value * array.Length)];
+	}
 
-	public abstract GameObject pickTemplate (GameLogic gameLogic);
+	protected Color[] getColorArray(GameLogic gameLogic, Color color) {
+		if (color == Color.yellow) {
+			return gameLogic.yellows;
+		}
+		if (color == Color.green) {
+			return gameLogic.greens;
+		}
+		throw new MissingReferenceException ("Unknown color");
+	}
+
+	public abstract void instantiate (GameLogic gameLogic, Vector3 position, Quaternion rotation);
 }
 	
 public class Tree : EnvironmentObject {
@@ -341,12 +359,12 @@ public class Tree : EnvironmentObject {
 		this.color = color;
 	}
 
-	public override GameObject pickTemplate(GameLogic gameLogic) {
-		GameObject[] treeArray = gameLogic.environmentTrees;
-		return treeArray[(int) (Random.value * treeArray.Length) % treeArray.Length];
+	public override void instantiate(GameLogic gameLogic, Vector3 position, Quaternion rotation) {
+		GameObject tree = GameLogic.Instantiate (randomChoice(gameLogic.environmentTrees), position, rotation);
+		tree.GetComponent<Renderer>().materials[1].color = randomChoice(getColorArray(gameLogic, this.color));
 	}
 }
-	
+
 public class Sign : EnvironmentObject {
 	public Color color;
 
@@ -354,8 +372,7 @@ public class Sign : EnvironmentObject {
 		this.color = color;
 	}
 
-	public override GameObject pickTemplate(GameLogic gameLogic) {
-		return null;
+	public override void instantiate(GameLogic gameLogic, Vector3 position, Quaternion rotation) {
 	}
 }
 
@@ -385,7 +402,7 @@ public struct Level {
 		foreach (RoadSegment segment in road) {
 			segment.road.instantiate (gameLogic, x, z, heading);
 			foreach (KeyValuePair<Side, EnvironmentObject> environmentObject in segment.environmentObjects) {
-				GameLogic.Instantiate (environmentObject.Value.pickTemplate(gameLogic), new Vector3(2 * x, 0, 2 * z) + segment.road.environmentObjectOffset(heading, environmentObject.Key), Quaternion.identity);
+				environmentObject.Value.instantiate(gameLogic, new Vector3(2 * x, 0, 2 * z) + segment.road.environmentObjectOffset(heading, environmentObject.Key), Quaternion.identity);
 			}
 			segment.road.updatePositionAndHeading (ref x, ref z, ref heading);
 		}
