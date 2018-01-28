@@ -11,8 +11,8 @@ public class GameLogic : MonoBehaviour {
 
 	// speed constants
 	private float speed = 1.8f;
-	private float turnCameraSpeed = 2.3f; 
-	private float rotateSpeed = 1f;
+	private float turnCameraSpeed = 3.8f; 
+	private float rotateSpeed = 1.5f;
 
 
 	// Used for turning
@@ -143,7 +143,7 @@ public class GameLogic : MonoBehaviour {
 			currentDirection = (Direction)(mod((int)currentDirection - 1, 4));
 			break;
 		}
-		targetPoint = levelManager.getNextLevel().instantiate(this, 0, 0, Direction.NORTH);
+		targetPoint = levelManager.getNextLevel().instantiate(this, (int)(targetPoint.x/2), (int)(targetPoint.z/2), currentDirection);
 	}
 
 	Vector3 getCarPos() {
