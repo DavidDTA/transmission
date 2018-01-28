@@ -23,26 +23,20 @@ public class GameLogic : MonoBehaviour {
 	Vector3 [] targetPoints;
 	int pointIndex = 0;
 
+	// Positioning
+	int roadbuildingZ = 0;
+	int roadbuildingX = 0;
+
+	// Levels
+	Levels levelManager;
+
 	// Use this for initialization
 	void Start () {
 		roadStraight.transform.localScale = new Vector3 (1, 1, -1);
 		roadIntersectionT.transform.localScale = new Vector3 (1, 1, -1);
-		instantiateRoad (Road.STRAIGHT, 0, 0, Direction.NORTH);
-		instantiateRoad (Road.INTERSECTION_T, 0, 1, Direction.NORTH);
-		instantiateRoad (Road.STRAIGHT, -1, 1, Direction.EAST);
-		instantiateRoad (Road.INTERSECTION_T, -2, 1, Direction.EAST);
-		instantiateRoad (Road.STRAIGHT, -2, 0, Direction.SOUTH);
-		instantiateRoad (Road.INTERSECTION_T, -2, -1, Direction.SOUTH);
-		instantiateRoad (Road.STRAIGHT, -1, -1, Direction.WEST);
-		instantiateRoad (Road.INTERSECTION_T, 0, -1, Direction.WEST);
-		targetPoints = new Vector3[] {
-			new Vector3 (0, 0, 2),
-			new Vector3 (-4, 0, 2),
-			new Vector3 (-4, 0, -2),
-			new Vector3 (0, 0, -2)
-		};
+		levelManager = new Levels ();
+		instantiateLevel (levelManager.getNextLevel());
 
-		targetPoint = targetPoints [pointIndex];
 		pointIndex++;
 
 		targetRotation = mainCamera.transform.rotation;
@@ -67,7 +61,7 @@ public class GameLogic : MonoBehaviour {
 			turnDirection = Side.Left;
 		}
 			
-		mainCamera.transform.rotation = Quaternion.Lerp (mainCamera.transform.rotation, targetRotation , 3.3f * Time.deltaTime);
+		mainCamera.transform.rotation = Quaternion.Lerp (mainCamera.transform.rotation, targetRotation , 2.3f * Time.deltaTime);
 	}
 
 	Vector3 getRotatePointOffset() {
@@ -141,20 +135,18 @@ public class GameLogic : MonoBehaviour {
 			turnAngle = getCurrentAngle () + (Mathf.PI / 2f);
 			targetAngle = turnAngle - Mathf.PI / 2;
 			rotatePoint = targetPoint + getRotatePointOffset ();
-			currentDirection = (Direction)(mod((int)currentDirection + 1, 4));
+			currentDirection = (Direction)(mod ((int)currentDirection + 1, 4));
 			break;
 		case Side.Left: 
 			targetRotation = mainCamera.transform.rotation * Quaternion.AngleAxis (-90, Vector3.up);
 			movementState = Movement.TURN_LEFT;
 			turnAngle = getCurrentAngle () - (Mathf.PI / 2f);
-			Debug.Log (currentDirection);
-
-			Debug.Log (turnAngle);
 			targetAngle = turnAngle + Mathf.PI / 2;
 			rotatePoint = targetPoint + getRotatePointOffset ();
 			currentDirection = (Direction)(mod((int)currentDirection - 1, 4));
 			break;
 		}
+		instantiateLevel (levelManager.getNextLevel());
 	}
 
 	Vector3 getCarPos() {
@@ -229,7 +221,30 @@ public class GameLogic : MonoBehaviour {
 		}
 	}
 
+	private void instantiateLevel(Level level) {
+		foreach (RoadSegment segment in level.road) {
+			instantiateRoad (segment.road, roadbuildingX, roadbuildingZ, currentDirection);
+		}
+		targetPoint = new Vector3 (roadbuildingX * 2, 0, roadbuildingZ * 2);
+		instantiateRoad (Road.INTERSECTION_T, roadbuildingX, roadbuildingZ, currentDirection);
+	}
+
+
 	private GameObject instantiateRoad(GameObject roadType, int x, int z, int rotation) {
+		switch ((Direction) rotation){ 
+		case Direction.NORTH:
+			roadbuildingZ += 1;
+			break;
+		case Direction.EAST:
+			roadbuildingX += 1;
+			break;
+		case Direction.SOUTH:
+			roadbuildingZ -= 1;
+			break;
+		case Direction.WEST:
+			roadbuildingX -= 1;
+			break;
+		}
 		return Instantiate (roadType, new Vector3(2 * x, 0, 2 * z), Quaternion.Euler(new Vector3(0, rotation * 90, 0)));
 	}
 
@@ -251,21 +266,21 @@ public class GameLogic : MonoBehaviour {
 	}
 }
 
-enum Direction {
+public enum Direction {
 	NORTH = 0, EAST = 1, SOUTH = 2, WEST = 3
 }
 
-enum Movement {
+public enum Movement {
 	STRAIGHT, TURN_LEFT, TURN_RIGHT
 }
 
-enum Side {Right, Left};
+public enum Side {Right, Left};
 
-enum Road {
+public enum Road {
 	STRAIGHT, TURN_LEFT, TURN_RIGHT, INTERSECTION_T, BRANCH_LEFT, BRANCH_RIGHT
 }
 	
-struct Position {
+public struct Position {
 	public int roadSection;
 	public Side side;
 
@@ -275,12 +290,12 @@ struct Position {
 	}
 }
 	
-class EnvironmentObject {
+public class EnvironmentObject {
 	public EnvironmentObject() {
 	}
 }
 	
-class Tree : EnvironmentObject {
+public class Tree : EnvironmentObject {
 	public Color color;
 
 	public Tree(Color color) {
@@ -288,7 +303,7 @@ class Tree : EnvironmentObject {
 	}
 }
 	
-class Sign : EnvironmentObject {
+public class Sign : EnvironmentObject {
 	public Color color;
 
 	public Sign(Position pos, Color color) {
@@ -296,7 +311,7 @@ class Sign : EnvironmentObject {
 	}
 }
 
-struct RoadSegment {
+public struct RoadSegment {
 	public Road road;
 	KeyValuePair<Side, EnvironmentObject>[] environmentObjects;
 
@@ -307,10 +322,10 @@ struct RoadSegment {
 
 }
 	
-struct Level {
+public struct Level {
 	public string rules;
 	public Side correctTurn;
-	RoadSegment[] road;
+	public RoadSegment[] road;
 
 	public Level(string rules, Side correctTurn, RoadSegment[] road) {
 		this.rules = rules;
@@ -321,7 +336,22 @@ struct Level {
 
 public class Levels {
 
-	private Level level1 = new Level(
+	int levelIndex = 0;
+	Level[] levels; 
+
+
+	public Levels() {
+		levels = new Level[] { level1, level2, level3 }; 
+	}
+
+	public Level getNextLevel() {
+		return levels[levelIndex];
+		levelIndex = (levelIndex + 1) % levels.Length;
+	}
+
+
+
+	public Level level1 = new Level(
 		"If one side of the road has more yellow trees, turn to that side",
 		Side.Left,
 		new RoadSegment[] {
