@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class GameLogic : MonoBehaviour {
 	public const string SERVER_URL = "http://9e24ab9f.ngrok.io";
-	public const string BEGINNING_INSTRUCTIONS = "You're on the phone with your friend Tran. He's lost. In other worse, Tran's Missin'. Help him get home! Use these instructions to guide him home.";
+	public const string BEGINNING_INSTRUCTIONS = "You're on the phone with your friend Tran. He's lost. In other words, Tran's Missin'. Help him get home! Use these instructions to guide him home.";
 
 	public GameObject roadStraight;
 	public GameObject roadIntersectionT;
@@ -678,7 +678,7 @@ class Levels {
 	public static Level level5 = new Level(
 		"If one side of the road has more yellow trees, turn to that side<br><br>" +
 		"UNLESS there is a red tree. Red trees mean turn right always<br><br>" +
-		"If you see a blue tree, switch yellow and green all other rules<br><br> ",
+		"If you see a blue tree, count green trees instead of yellow<br><br> ",
 		Side.Left,
 		new RoadSegment[] {
 			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
@@ -711,7 +711,7 @@ class Levels {
 	public static Level level6 = new Level(
 		"If one side of the road has more yellow trees, turn to that side<br><br>" +
 		"UNLESS there is a red tree. Red trees mean turn right always<br><br>" +
-		"If you see a blue tree, switch yellow and green all other rules<br><br> ",
+		"If you see a blue tree, count green trees instead of yellow<br><br> ",
 		Side.Right,
 		new RoadSegment[] {
 			new RoadSegment(new Road.Straight(), new KeyValuePair<Side, EnvironmentObject>[] {}),
@@ -742,7 +742,7 @@ class Levels {
 	public static Level level7 = new Level(
 		"If one side of the road has more yellow trees, turn to that side<br><br>" +
 		"UNLESS there is a red tree. Red trees mean turn right always<br><br>" +
-		"If you see a blue tree, switch yellow and green all other rules<br><br>" +
+		"If you see a blue tree, count green trees instead of yellow<br><br>" +
 		"NEVER turn right twice in a row. If the other rules say to, turn left instead.",
 		Side.Left,
 		new RoadSegment[] {
@@ -776,7 +776,7 @@ class Levels {
 	public static Level level8 = new Level(
 		"If one side of the road has more yellow trees, turn to that side<br><br>" +
 		"UNLESS there is a red tree. Red trees mean turn right always<br><br>" +
-		"If you see a blue tree, switch yellow and green all other rules<br><br>" +
+		"If you see a blue tree, count green trees instead of yellow<br><br>" +
 		"NEVER turn right twice in a row. If the other rules say to, turn left instead.",
 		Side.Right,
 		new RoadSegment[] {
